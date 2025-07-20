@@ -79,6 +79,15 @@ function OrdersPage() {
               <option value="Beverages">Beverages</option>
               <option value="Veg Starters">Veg Starters</option>
               <option value="Non-Veg Starters">Non-Veg Starters</option>
+              <option value="Khan Sahab Spl. Mutton">Khan Sahab Spl. Mutton</option>
+              <option value="Khan Sahab Spl. Chicken">Khan Sahab Spl. Chicken</option>
+              <option value="Khan Sahab Spl. Chinese">Khan Sahab Spl. Chinese</option>
+              <option value="Soups">Soups</option>
+              <option value="Khan Sahab Veg Special">Khan Sahab Veg Special</option>
+              <option value="Rice & Biryani">Rice & Biryani</option>
+              <option value="Indian Breads">Indian Breads</option>
+              <option value="Dessert">Dessert</option>
+              <option value="Salad / Papad">Salad / Papad</option>
             </select>
           </div>
         </div>

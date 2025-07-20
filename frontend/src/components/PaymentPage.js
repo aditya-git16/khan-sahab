@@ -100,7 +100,13 @@ function PaymentPage() {
         payment_method: paymentMethod
       };
       
-      await axios.post(`${API_BASE}/bills`, billSaveData);
+      try {
+        await axios.post(`${API_BASE}/bills`, billSaveData);
+        console.log('Bill saved successfully');
+      } catch (billError) {
+        console.error('Failed to save bill:', billError);
+        // Continue with payment completion even if bill saving fails
+      }
 
       // Print bill (optional - will skip if printer not available)
       let printSuccess = false;
@@ -128,8 +134,8 @@ function PaymentPage() {
       }, 5000); // Redirect after 5 seconds
       
     } catch (err) {
-      alert('Failed to complete payment. Please try again.');
       console.error('Error completing payment:', err);
+      alert('Failed to complete payment. Please try again.');
     }
   };
 

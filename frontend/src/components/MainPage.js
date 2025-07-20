@@ -102,7 +102,7 @@ function MainPage() {
   if (loading) {
     return (
       <div className="container">
-        <div className="loading">Loading restaurant management system...</div>
+        <div className="loading">Loading ...</div>
       </div>
     );
   }
@@ -122,7 +122,7 @@ function MainPage() {
         <div className="header-logo">
           <img src="/khan_sahab_logo.jpg" alt="Khan Sahab Logo" className="main-logo" />
         </div>
-        <h1>🍽️ Restaurant Management System</h1>
+        <h1>🍽️ Khan Sahab</h1>
         <div className="nav">
           <button 
             className={`nav-button ${activeTab === 'tables' ? 'active' : ''}`}
@@ -198,7 +198,7 @@ function MainPage() {
                   {tableOrder && (
                     <div className="table-order-info">
                       <div className="order-id">Order #{tableOrder.id}</div>
-                      <div className="order-total">${tableOrder.total_amount.toFixed(2)}</div>
+                      <div className="order-total">₹{tableOrder.total_amount.toFixed(2)}</div>
                       <div className="order-status">{tableOrder.status}</div>
                     </div>
                   )}
@@ -283,6 +283,15 @@ function MainPage() {
                     <option value="Beverages">Beverages</option>
                     <option value="Veg Starters">Veg Starters</option>
                     <option value="Non-Veg Starters">Non-Veg Starters</option>
+                    <option value="Khan Sahab Spl. Mutton">Khan Sahab Spl. Mutton</option>
+                    <option value="Khan Sahab Spl. Chicken">Khan Sahab Spl. Chicken</option>
+                    <option value="Khan Sahab Spl. Chinese">Khan Sahab Spl. Chinese</option>
+                    <option value="Soups">Soups</option>
+                    <option value="Khan Sahab Veg Special">Khan Sahab Veg Special</option>
+                    <option value="Rice & Biryani">Rice & Biryani</option>
+                    <option value="Indian Breads">Indian Breads</option>
+                    <option value="Dessert">Dessert</option>
+                    <option value="Salad / Papad">Salad / Papad</option>
                   </select>
                 </div>
                 <div className="modal-buttons">
@@ -393,6 +402,15 @@ function MainPage() {
                 <option value="Beverages">Beverages</option>
                 <option value="Veg Starters">Veg Starters</option>
                 <option value="Non-Veg Starters">Non-Veg Starters</option>
+                <option value="Khan Sahab Spl. Mutton">Khan Sahab Spl. Mutton</option>
+                <option value="Khan Sahab Spl. Chicken">Khan Sahab Spl. Chicken</option>
+                <option value="Khan Sahab Spl. Chinese">Khan Sahab Spl. Chinese</option>
+                <option value="Soups">Soups</option>
+                <option value="Khan Sahab Veg Special">Khan Sahab Veg Special</option>
+                <option value="Rice & Biryani">Rice & Biryani</option>
+                <option value="Indian Breads">Indian Breads</option>
+                <option value="Dessert">Dessert</option>
+                <option value="Salad / Papad">Salad / Papad</option>
               </select>
             </div>
           </div>

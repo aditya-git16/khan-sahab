@@ -161,7 +161,7 @@ def create_order():
     
     # Add order items
     for item_data in data['items']:
-        menu_item = MenuItem.query.get(item_data['menu_item_id'])
+        menu_item = db.session.get(MenuItem, item_data['menu_item_id'])
         if menu_item:
             order_item = OrderItem(
                 order_id=new_order.id,
@@ -175,7 +175,7 @@ def create_order():
     new_order.total_amount = total_amount
     
     # Update table status
-    table = Table.query.get(data['table_id'])
+    table = db.session.get(Table, data['table_id'])
     if table:
         table.status = 'occupied'
         table.current_order_id = new_order.id
@@ -219,7 +219,7 @@ def update_order(order_id):
     total_amount = 0
     for item_data in data['items']:
         if 'menu_item_id' in item_data and 'quantity' in item_data:
-            menu_item = MenuItem.query.get(item_data['menu_item_id'])
+            menu_item = db.session.get(MenuItem, item_data['menu_item_id'])
             if menu_item:
                 order_item = OrderItem(
                     order_id=order.id,
@@ -253,7 +253,7 @@ def update_order_status(order_id):
     
     # If order is paid, update table status
     if data['status'] == 'paid':
-        table = Table.query.get(order.table_id)
+        table = db.session.get(Table, order.table_id)
         if table:
             table.status = 'available'
             table.current_order_id = None
@@ -266,6 +266,11 @@ def create_bill():
     data = request.get_json()
     
     try:
+        # Check if bill already exists for this order
+        existing_bill = Bill.query.filter_by(order_id=data.get('order_id')).first()
+        if existing_bill:
+            return jsonify({'message': 'Bill already exists for this order', 'bill_id': existing_bill.id})
+        
         # Create bill record
         new_bill = Bill(
             order_id=data.get('order_id'),
@@ -291,6 +296,7 @@ def create_bill():
         return jsonify({'message': 'Bill created successfully', 'bill_id': new_bill.id})
     except Exception as e:
         db.session.rollback()
+        print(f"Error creating bill: {e}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/bills', methods=['GET'])
@@ -385,6 +391,104 @@ def init_db():
             {'name': 'Chicken Platter', 'description': 'Chicken Platter', 'price': 799.00, 'category': 'Non-Veg Starters'},
             {'name': 'Fish Tikka', 'description': 'Fish Tikka', 'price': 599.00, 'category': 'Non-Veg Starters'},
             {'name': 'Fish Amritsari', 'description': 'Fish Amritsari', 'price': 549.00, 'category': 'Non-Veg Starters'},
+            
+            # Khan Sahab Spl. Mutton
+            {'name': 'Mutton Palak Goast', 'description': 'Mutton Palak Goast', 'price': 599.00, 'category': 'Khan Sahab Spl. Mutton'},
+            {'name': 'Mutton Stew (Chef Spl.)', 'description': 'Mutton Stew - Chef Special', 'price': 599.00, 'category': 'Khan Sahab Spl. Mutton'},
+            {'name': 'Mutton Rogan Josh', 'description': 'Mutton Rogan Josh', 'price': 599.00, 'category': 'Khan Sahab Spl. Mutton'},
+            {'name': 'Bhuna Mutton (Chef Spl.)', 'description': 'Bhuna Mutton - Chef Special', 'price': 699.00, 'category': 'Khan Sahab Spl. Mutton'},
+            {'name': 'Mutton Dhawa', 'description': 'Mutton Dhawa', 'price': 599.00, 'category': 'Khan Sahab Spl. Mutton'},
+            {'name': 'Tawa Mutton', 'description': 'Tawa Mutton', 'price': 599.00, 'category': 'Khan Sahab Spl. Mutton'},
+            {'name': 'Mutton Keema Mutter', 'description': 'Mutton Keema Mutter', 'price': 599.00, 'category': 'Khan Sahab Spl. Mutton'},
+            {'name': 'Mutton Handi', 'description': 'Mutton Handi', 'price': 699.00, 'category': 'Khan Sahab Spl. Mutton'},
+            {'name': 'Mutton 199 (Chef Spl.)', 'description': 'Mutton 199 - Chef Special', 'price': 599.00, 'category': 'Khan Sahab Spl. Mutton'},
+            {'name': 'Rahara Mutton', 'description': 'Rahara Mutton', 'price': 699.00, 'category': 'Khan Sahab Spl. Mutton'},
+            {'name': 'Fish Curry', 'description': 'Fish Curry', 'price': 699.00, 'category': 'Khan Sahab Spl. Mutton'},
+            {'name': 'Egg Curry', 'description': 'Egg Curry', 'price': 250.00, 'category': 'Khan Sahab Spl. Mutton'},
+            
+            # Khan Sahab Spl. Chicken
+            {'name': 'Chicken Makhani Boneless', 'description': 'Chicken Makhani Boneless', 'price': 699.00, 'category': 'Khan Sahab Spl. Chicken'},
+            {'name': 'Chicken Kalimirch', 'description': 'Chicken Kalimirch', 'price': 749.00, 'category': 'Khan Sahab Spl. Chicken'},
+            {'name': 'Chicken Malai Gravy Boneless', 'description': 'Chicken Malai Gravy Boneless', 'price': 699.00, 'category': 'Khan Sahab Spl. Chicken'},
+            {'name': 'Chicken Korma', 'description': 'Chicken Korma', 'price': 699.00, 'category': 'Khan Sahab Spl. Chicken'},
+            {'name': 'Chicken Do Pyaza', 'description': 'Chicken Do Pyaza', 'price': 699.00, 'category': 'Khan Sahab Spl. Chicken'},
+            {'name': 'Khan Sahab Spl. Chicken Bhuna', 'description': 'Khan Sahab Special Chicken Bhuna', 'price': 799.00, 'category': 'Khan Sahab Spl. Chicken'},
+            {'name': 'Kadhai Chicken', 'description': 'Kadhai Chicken', 'price': 699.00, 'category': 'Khan Sahab Spl. Chicken'},
+            {'name': 'Chicken Shahi Korama', 'description': 'Chicken Shahi Korama', 'price': 699.00, 'category': 'Khan Sahab Spl. Chicken'},
+            {'name': 'Chicken Tikka Masala', 'description': 'Chicken Tikka Masala', 'price': 699.00, 'category': 'Khan Sahab Spl. Chicken'},
+            
+            # Khan Sahab Spl. Chinese
+            {'name': 'Veg. Noodle', 'description': 'Vegetable Noodle', 'price': 399.00, 'category': 'Khan Sahab Spl. Chinese'},
+            {'name': 'Chicken Noodle', 'description': 'Chicken Noodle', 'price': 499.00, 'category': 'Khan Sahab Spl. Chinese'},
+            {'name': 'Veg. Manchurian', 'description': 'Vegetable Manchurian', 'price': 399.00, 'category': 'Khan Sahab Spl. Chinese'},
+            {'name': 'Chicken Manchurian', 'description': 'Chicken Manchurian', 'price': 499.00, 'category': 'Khan Sahab Spl. Chinese'},
+            {'name': 'Chilly Paneer', 'description': 'Chilly Paneer', 'price': 399.00, 'category': 'Khan Sahab Spl. Chinese'},
+            {'name': 'Chilly Chicken', 'description': 'Chilly Chicken', 'price': 499.00, 'category': 'Khan Sahab Spl. Chinese'},
+            {'name': 'Honey Chilly Potato', 'description': 'Honey Chilly Potato', 'price': 349.00, 'category': 'Khan Sahab Spl. Chinese'},
+            {'name': 'French Fry', 'description': 'French Fry', 'price': 199.00, 'category': 'Khan Sahab Spl. Chinese'},
+            {'name': 'Chicken Lollipop (5 Pcs.)', 'description': 'Chicken Lollipop - 5 Pieces', 'price': 499.00, 'category': 'Khan Sahab Spl. Chinese'},
+            {'name': 'Chicken Maggi', 'description': 'Chicken Maggi', 'price': 449.00, 'category': 'Khan Sahab Spl. Chinese'},
+            {'name': 'Mutton Maggi', 'description': 'Mutton Maggi', 'price': 499.00, 'category': 'Khan Sahab Spl. Chinese'},
+            
+            # Soups
+            {'name': 'Veg. Soup', 'description': 'Vegetable Soup', 'price': 150.00, 'category': 'Soups'},
+            {'name': 'Veg Hot \'N\' Sour Soup', 'description': 'Vegetable Hot and Sour Soup', 'price': 180.00, 'category': 'Soups'},
+            {'name': 'Chicken Soup', 'description': 'Chicken Soup', 'price': 199.00, 'category': 'Soups'},
+            {'name': 'Chicken Hot \'N\' Sour Soup', 'description': 'Chicken Hot and Sour Soup', 'price': 250.00, 'category': 'Soups'},
+            
+            # Khan Sahab Veg Special
+            {'name': 'Kadhai Paneer', 'description': 'Kadhai Paneer', 'price': 449.00, 'category': 'Khan Sahab Veg Special'},
+            {'name': 'Paneer Butter Masala', 'description': 'Paneer Butter Masala', 'price': 499.00, 'category': 'Khan Sahab Veg Special'},
+            {'name': 'Shahi Paneer', 'description': 'Shahi Paneer', 'price': 499.00, 'category': 'Khan Sahab Veg Special'},
+            {'name': 'Mutter Paneer', 'description': 'Mutter Paneer', 'price': 449.00, 'category': 'Khan Sahab Veg Special'},
+            {'name': 'Palak Paneer', 'description': 'Palak Paneer', 'price': 449.00, 'category': 'Khan Sahab Veg Special'},
+            {'name': 'Mix Vegetable', 'description': 'Mix Vegetable', 'price': 399.00, 'category': 'Khan Sahab Veg Special'},
+            {'name': 'Dal Tadka', 'description': 'Dal Tadka', 'price': 349.00, 'category': 'Khan Sahab Veg Special'},
+            {'name': 'Dal Makhani', 'description': 'Dal Makhani', 'price': 399.00, 'category': 'Khan Sahab Veg Special'},
+            {'name': 'Chaap Kadhai Masala', 'description': 'Chaap Kadhai Masala', 'price': 449.00, 'category': 'Khan Sahab Veg Special'},
+            {'name': 'Chaap Rara', 'description': 'Chaap Rara', 'price': 499.00, 'category': 'Khan Sahab Veg Special'},
+            {'name': 'Aloo Gobhi Kamanchi', 'description': 'Aloo Gobhi Kamanchi', 'price': 399.00, 'category': 'Khan Sahab Veg Special'},
+            {'name': 'Mushroom Mutter Masala', 'description': 'Mushroom Mutter Masala', 'price': 499.00, 'category': 'Khan Sahab Veg Special'},
+            {'name': 'Fruit Cocktail Curry', 'description': 'Fruit Cocktail Curry', 'price': 499.00, 'category': 'Khan Sahab Veg Special'},
+            
+            # Rice & Biryani
+            {'name': 'Steam Rice', 'description': 'Steam Rice', 'price': 199.00, 'category': 'Rice & Biryani'},
+            {'name': 'Egg Biryani', 'description': 'Egg Biryani', 'price': 299.00, 'category': 'Rice & Biryani'},
+            {'name': 'Veg Biryani', 'description': 'Vegetable Biryani', 'price': 349.00, 'category': 'Rice & Biryani'},
+            {'name': 'Mutton Biryani', 'description': 'Mutton Biryani', 'price': 449.00, 'category': 'Rice & Biryani'},
+            {'name': 'Chicken Biryani', 'description': 'Chicken Biryani', 'price': 399.00, 'category': 'Rice & Biryani'},
+            {'name': 'Jeera Rice', 'description': 'Jeera Rice', 'price': 249.00, 'category': 'Rice & Biryani'},
+            {'name': 'Peas Pulao', 'description': 'Peas Pulao', 'price': 299.00, 'category': 'Rice & Biryani'},
+            
+            # Indian Breads
+            {'name': 'Tawa Roti', 'description': 'Tawa Roti', 'price': 20.00, 'category': 'Indian Breads'},
+            {'name': 'Rumali Roti', 'description': 'Rumali Roti', 'price': 30.00, 'category': 'Indian Breads'},
+            {'name': 'Tandoori Roti', 'description': 'Tandoori Roti', 'price': 30.00, 'category': 'Indian Breads'},
+            {'name': 'Butter Roti', 'description': 'Butter Roti', 'price': 35.00, 'category': 'Indian Breads'},
+            {'name': 'Naan', 'description': 'Naan', 'price': 40.00, 'category': 'Indian Breads'},
+            {'name': 'Butter Naan', 'description': 'Butter Naan', 'price': 50.00, 'category': 'Indian Breads'},
+            {'name': 'Laccha Paratha', 'description': 'Laccha Paratha', 'price': 60.00, 'category': 'Indian Breads'},
+            {'name': 'Garlic Naan', 'description': 'Garlic Naan', 'price': 60.00, 'category': 'Indian Breads'},
+            {'name': 'Aloo Stuffed Naan/Paratha', 'description': 'Aloo Stuffed Naan/Paratha', 'price': 80.00, 'category': 'Indian Breads'},
+            {'name': 'Paneer Stuffed Naan/Paratha', 'description': 'Paneer Stuffed Naan/Paratha', 'price': 100.00, 'category': 'Indian Breads'},
+            {'name': 'Bombay Roti with Butter', 'description': 'Bombay Roti with Butter', 'price': 40.00, 'category': 'Indian Breads'},
+            {'name': 'Keema Naan', 'description': 'Keema Naan', 'price': 120.00, 'category': 'Indian Breads'},
+            
+            # Dessert
+            {'name': 'Gulab Jamun', 'description': 'Gulab Jamun', 'price': 99.00, 'category': 'Dessert'},
+            {'name': 'Rasmalai', 'description': 'Rasmalai', 'price': 179.00, 'category': 'Dessert'},
+            {'name': 'Vanilla Ice Cream', 'description': 'Vanilla Ice Cream', 'price': 120.00, 'category': 'Dessert'},
+            {'name': 'Strawberry Ice Cream', 'description': 'Strawberry Ice Cream', 'price': 120.00, 'category': 'Dessert'},
+            {'name': 'Fruit Cream', 'description': 'Fruit Cream', 'price': 179.00, 'category': 'Dessert'},
+            
+            # Salad / Papad
+            {'name': 'Green Salad', 'description': 'Green Salad', 'price': 80.00, 'category': 'Salad / Papad'},
+            {'name': 'Russian Salad', 'description': 'Russian Salad', 'price': 120.00, 'category': 'Salad / Papad'},
+            {'name': 'Fruit Cream Salad', 'description': 'Fruit Cream Salad', 'price': 150.00, 'category': 'Salad / Papad'},
+            {'name': 'Papad (Dry/Fry - 2pcs)', 'description': 'Papad - Dry or Fry - 2 pieces', 'price': 40.00, 'category': 'Salad / Papad'},
+            {'name': 'Masala Papad', 'description': 'Masala Papad', 'price': 60.00, 'category': 'Salad / Papad'},
+            {'name': 'Boondi Raita', 'description': 'Boondi Raita', 'price': 60.00, 'category': 'Salad / Papad'},
+            {'name': 'Mix Veg. Raita', 'description': 'Mix Vegetable Raita', 'price': 80.00, 'category': 'Salad / Papad'},
         ]
         
         for item_data in menu_items:
