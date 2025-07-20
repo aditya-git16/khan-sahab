@@ -16,6 +16,8 @@ function MainPage() {
   const [menuCategories, setMenuCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [menuSearchTerm, setMenuSearchTerm] = useState('');
+  const [menuSelectedCategory, setMenuSelectedCategory] = useState('all');
 
   const navigate = useNavigate();
   const API_BASE = 'http://localhost:5001/api';
@@ -71,6 +73,18 @@ function MainPage() {
     }
   };
 
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    // Reset filters when switching tabs
+    if (tab === 'menu') {
+      setMenuSelectedCategory('all');
+      setMenuSearchTerm('');
+    } else if (tab === 'orders') {
+      setSelectedCategory('all');
+      setSearchTerm('');
+    }
+  };
+
   const handleTableClick = (table) => {
     navigate(`/pos/${table.id}`);
   };
@@ -112,19 +126,19 @@ function MainPage() {
         <div className="nav">
           <button 
             className={`nav-button ${activeTab === 'tables' ? 'active' : ''}`}
-            onClick={() => setActiveTab('tables')}
+            onClick={() => handleTabChange('tables')}
           >
             Tables
           </button>
           <button 
             className={`nav-button ${activeTab === 'menu' ? 'active' : ''}`}
-            onClick={() => setActiveTab('menu')}
+            onClick={() => handleTabChange('menu')}
           >
             Menu
           </button>
           <button 
             className={`nav-button ${activeTab === 'orders' ? 'active' : ''}`}
-            onClick={() => setActiveTab('orders')}
+            onClick={() => handleTabChange('orders')}
           >
             Orders
           </button>
@@ -285,32 +299,71 @@ function MainPage() {
 
           <div className="menu-categories">
             <button 
-              className={`category-btn active`}
-              onClick={() => setActiveTab('menu')}
+              className={`category-btn ${menuSelectedCategory === 'all' ? 'active' : ''}`}
+              onClick={() => setMenuSelectedCategory('all')}
             >
               All Categories
             </button>
             {menuCategories.map(category => (
               <button 
                 key={category}
-                className={`category-btn`}
-                onClick={() => setActiveTab('menu')}
+                className={`category-btn ${menuSelectedCategory === category ? 'active' : ''}`}
+                onClick={() => setMenuSelectedCategory(category)}
               >
                 {category}
               </button>
             ))}
           </div>
 
-          <div className="grid">
-            {menu.map(item => (
-              <div key={item.id} className="card">
-                <h3>{item.name}</h3>
-                <p>{item.description}</p>
-                <p><strong>Category:</strong> {item.category}</p>
-                <div className="price">₹{item.price.toFixed(2)}</div>
-              </div>
-            ))}
+          {/* Menu Search */}
+          <div className="menu-controls">
+            <div className="search-box">
+              <input
+                type="text"
+                placeholder="Search menu items..."
+                value={menuSearchTerm}
+                onChange={(e) => setMenuSearchTerm(e.target.value)}
+                className="search-input"
+              />
+            </div>
           </div>
+
+                    <div className="grid">
+            {menu
+              .filter(item => {
+                // Filter by search term
+                const searchMatch = menuSearchTerm === '' || 
+                  item.name.toLowerCase().includes(menuSearchTerm.toLowerCase()) ||
+                  item.description.toLowerCase().includes(menuSearchTerm.toLowerCase());
+                
+                // Filter by category
+                const categoryMatch = menuSelectedCategory === 'all' || item.category === menuSelectedCategory;
+                
+                return searchMatch && categoryMatch;
+              })
+              .map(item => (
+                <div key={item.id} className="card">
+                  <h3>{item.name}</h3>
+                  <p>{item.description}</p>
+                  <p><strong>Category:</strong> {item.category}</p>
+                  <div className="price">₹{item.price.toFixed(2)}</div>
+                </div>
+              ))}
+          </div>
+          
+          {menu
+            .filter(item => {
+              const searchMatch = menuSearchTerm === '' || 
+                item.name.toLowerCase().includes(menuSearchTerm.toLowerCase()) ||
+                item.description.toLowerCase().includes(menuSearchTerm.toLowerCase());
+              const categoryMatch = menuSelectedCategory === 'all' || item.category === menuSelectedCategory;
+              return searchMatch && categoryMatch;
+            })
+            .length === 0 && (
+            <div className="no-orders">
+              <p>No menu items found matching your search criteria.</p>
+            </div>
+          )}
         </div>
       )}
 
