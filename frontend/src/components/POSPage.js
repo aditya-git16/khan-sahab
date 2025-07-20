@@ -11,19 +11,24 @@ function POSPage() {
   const [loading, setLoading] = useState(true);
   const [existingOrder, setExistingOrder] = useState(null);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [menuCategories, setMenuCategories] = useState([]);
 
   const API_BASE = 'http://localhost:5001/api';
 
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      const [menuRes, tablesRes, ordersRes] = await Promise.all([
+      const [menuRes, tablesRes, ordersRes, categoriesRes] = await Promise.all([
         axios.get(`${API_BASE}/menu`),
         axios.get(`${API_BASE}/tables`),
-        axios.get(`${API_BASE}/orders`)
+        axios.get(`${API_BASE}/orders`),
+        axios.get(`${API_BASE}/menu/categories`)
       ]);
       
       setMenu(menuRes.data);
+      setMenuCategories(categoriesRes.data);
       const currentTable = tablesRes.data.find(t => t.id === parseInt(tableId));
       setTable(currentTable);
       
@@ -166,7 +171,6 @@ function POSPage() {
         </div>
         <div className="table-info">
           <span className="status available">Available</span>
-          <span>Capacity: {table.capacity}</span>
         </div>
       </div>
 
@@ -257,19 +261,57 @@ function POSPage() {
         {/* Right Side - Menu */}
         <div className="pos-menu">
           <h2>Menu Items</h2>
-          <div className="menu-grid">
-            {menu.map(item => (
-              <div 
-                key={item.id} 
-                className="menu-item" 
-                onClick={() => addToCart(item)}
+          
+          {/* Search and Category Filter */}
+          <div className="menu-controls">
+            <div className="search-box">
+              <input
+                type="text"
+                placeholder="Search menu items..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="search-input"
+              />
+            </div>
+            <div className="category-filter">
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="category-select"
               >
-                <h3>{item.name}</h3>
-                <p>{item.description}</p>
-                <div className="menu-item-category">{item.category}</div>
-                <div className="menu-item-price">₹{item.price.toFixed(2)}</div>
-              </div>
-            ))}
+                <option value="all">All Categories</option>
+                {menuCategories.map(category => (
+                  <option key={category} value={category}>{category}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="menu-grid">
+            {menu
+              .filter(item => {
+                // Filter by search term
+                const searchMatch = searchTerm === '' || 
+                  item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  item.description.toLowerCase().includes(searchTerm.toLowerCase());
+                
+                // Filter by category
+                const categoryMatch = selectedCategory === 'all' || item.category === selectedCategory;
+                
+                return searchMatch && categoryMatch;
+              })
+              .map(item => (
+                <div 
+                  key={item.id} 
+                  className="menu-item" 
+                  onClick={() => addToCart(item)}
+                >
+                  <h3>{item.name}</h3>
+                  <p>{item.description}</p>
+                  <div className="menu-item-category">{item.category}</div>
+                  <div className="menu-item-price">₹{item.price.toFixed(2)}</div>
+                </div>
+              ))}
           </div>
         </div>
       </div>

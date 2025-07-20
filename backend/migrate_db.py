@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-Database migration script to add new tax columns to existing database
+Database migration script to update database schema
 """
 import sqlite3
 import os
 
 def migrate_database():
-    """Add missing columns to the existing database"""
+    """Update database schema"""
     db_path = 'restaurant.db'
     
     if not os.path.exists(db_path):
@@ -19,7 +19,7 @@ def migrate_database():
     cursor = conn.cursor()
     
     try:
-        # Check if columns already exist
+        # Check if columns already exist in order table
         cursor.execute("PRAGMA table_info('order')")
         columns = [column[1] for column in cursor.fetchall()]
         
@@ -39,6 +39,34 @@ def migrate_database():
         if 'payment_method' not in columns:
             print("Adding payment_method column...")
             cursor.execute("ALTER TABLE 'order' ADD COLUMN payment_method TEXT DEFAULT 'cash'")
+        
+        # Check table table for capacity column
+        cursor.execute("PRAGMA table_info('table')")
+        table_columns = [column[1] for column in cursor.fetchall()]
+        
+        # Note: SQLite doesn't support dropping columns directly
+        # We'll need to recreate the table if capacity column exists
+        if 'capacity' in table_columns:
+            print("Removing capacity column from table table...")
+            # Create new table without capacity
+            cursor.execute("""
+                CREATE TABLE table_new (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    number INTEGER UNIQUE NOT NULL,
+                    status VARCHAR(20) DEFAULT 'available',
+                    current_order_id INTEGER
+                )
+            """)
+            
+            # Copy data from old table to new table
+            cursor.execute("""
+                INSERT INTO table_new (id, number, status, current_order_id)
+                SELECT id, number, status, current_order_id FROM "table"
+            """)
+            
+            # Drop old table and rename new table
+            cursor.execute("DROP TABLE 'table'")
+            cursor.execute("ALTER TABLE table_new RENAME TO 'table'")
         
         # Check if bill table exists, if not create it
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='bill'")

@@ -5,15 +5,22 @@ import { useNavigate } from 'react-router-dom';
 function OrdersPage() {
   const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
+  const [menu, setMenu] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
 
   const API_BASE = 'http://localhost:5001/api';
 
   const fetchOrders = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API_BASE}/orders`);
-      setOrders(response.data);
+      const [ordersRes, menuRes] = await Promise.all([
+        axios.get(`${API_BASE}/orders`),
+        axios.get(`${API_BASE}/menu`)
+      ]);
+      setOrders(ordersRes.data);
+      setMenu(menuRes.data);
     } catch (err) {
       console.error('Error fetching orders:', err);
     } finally {
@@ -51,13 +58,70 @@ function OrdersPage() {
       </div>
 
       <div className="orders-content">
-        {orders.length === 0 ? (
+        {/* Search and Filter Controls */}
+        <div className="order-controls">
+          <div className="search-box">
+            <input
+              type="text"
+              placeholder="Search orders by table number or order ID..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="search-input"
+            />
+          </div>
+          <div className="category-filter">
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="category-select"
+            >
+              <option value="all">All Categories</option>
+              <option value="Beverages">Beverages</option>
+              <option value="Veg Starters">Veg Starters</option>
+              <option value="Non-Veg Starters">Non-Veg Starters</option>
+            </select>
+          </div>
+        </div>
+
+        {orders
+          .filter(order => {
+            // Filter by search term
+            const searchMatch = searchTerm === '' || 
+              order.id.toString().includes(searchTerm) ||
+              order.table_id.toString().includes(searchTerm);
+            
+            // Filter by category
+            const categoryMatch = selectedCategory === 'all' || 
+              order.items.some(item => {
+                const menuItem = menu.find(m => m.id === item.menu_item_id);
+                return menuItem && menuItem.category === selectedCategory;
+              });
+            
+            return searchMatch && categoryMatch;
+          })
+          .length === 0 ? (
           <div className="no-orders">
             <p>No orders found</p>
           </div>
         ) : (
           <div className="orders-grid">
-            {orders.map(order => (
+            {orders
+              .filter(order => {
+                // Filter by search term
+                const searchMatch = searchTerm === '' || 
+                  order.id.toString().includes(searchTerm) ||
+                  order.table_id.toString().includes(searchTerm);
+                
+                // Filter by category
+                const categoryMatch = selectedCategory === 'all' || 
+                  order.items.some(item => {
+                    const menuItem = menu.find(m => m.id === item.menu_item_id);
+                    return menuItem && menuItem.category === selectedCategory;
+                  });
+                
+                return searchMatch && categoryMatch;
+              })
+              .map(order => (
               <div key={order.id} className="order-card">
                 <div className="order-header">
                   <h3>Order #{order.id}</h3>
@@ -70,13 +134,17 @@ function OrdersPage() {
                   <p><strong>Created:</strong> {new Date(order.created_at).toLocaleString()}</p>
                 </div>
                 <div className="order-items">
-                  {order.items.map((item, index) => (
-                    <div key={index} className="order-item">
-                      <span>{item.menu_item_name}</span>
-                      <span>x{item.quantity}</span>
-                      <span>₹{item.price.toFixed(2)}</span>
-                    </div>
-                  ))}
+                  {order.items.map((item, index) => {
+                    const menuItem = menu.find(m => m.id === item.menu_item_id);
+                    return (
+                      <div key={index} className="order-item">
+                        <span>{item.menu_item_name}</span>
+                        <span>x{item.quantity}</span>
+                        <span>₹{item.price.toFixed(2)}</span>
+                        {menuItem && <span className="item-category">({menuItem.category})</span>}
+                      </div>
+                    );
+                  })}
                 </div>
                 <div className="order-actions">
                   <button 

@@ -10,7 +10,12 @@ function MainPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showAddTable, setShowAddTable] = useState(false);
-  const [newTable, setNewTable] = useState({ number: '', capacity: 4 });
+  const [newTable, setNewTable] = useState({ number: '' });
+  const [showAddMenuItem, setShowAddMenuItem] = useState(false);
+  const [newMenuItem, setNewMenuItem] = useState({ name: '', description: '', price: '', category: '' });
+  const [menuCategories, setMenuCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
 
   const navigate = useNavigate();
   const API_BASE = 'http://localhost:5001/api';
@@ -22,15 +27,17 @@ function MainPage() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [menuRes, tablesRes, ordersRes] = await Promise.all([
+      const [menuRes, tablesRes, ordersRes, categoriesRes] = await Promise.all([
         axios.get(`${API_BASE}/menu`),
         axios.get(`${API_BASE}/tables`),
-        axios.get(`${API_BASE}/orders`)
+        axios.get(`${API_BASE}/orders`),
+        axios.get(`${API_BASE}/menu/categories`)
       ]);
       
       setMenu(menuRes.data);
       setTables(tablesRes.data);
       setOrders(ordersRes.data);
+      setMenuCategories(categoriesRes.data);
       setError(null);
     } catch (err) {
       setError('Failed to fetch data. Please check if the backend server is running.');
@@ -43,12 +50,24 @@ function MainPage() {
   const addTable = async () => {
     try {
       await axios.post(`${API_BASE}/tables`, newTable);
-      setNewTable({ number: '', capacity: 4 });
+      setNewTable({ number: '' });
       setShowAddTable(false);
       fetchData();
     } catch (err) {
       alert('Failed to add table. Please try again.');
       console.error('Error adding table:', err);
+    }
+  };
+
+  const addMenuItem = async () => {
+    try {
+      await axios.post(`${API_BASE}/menu`, newMenuItem);
+      setNewMenuItem({ name: '', description: '', price: '', category: '' });
+      setShowAddMenuItem(false);
+      fetchData();
+    } catch (err) {
+      alert('Failed to add menu item. Please try again.');
+      console.error('Error adding menu item:', err);
     }
   };
 
@@ -136,18 +155,7 @@ function MainPage() {
                     placeholder="Enter table number"
                   />
                 </div>
-                <div className="form-group">
-                  <label>Capacity:</label>
-                  <select
-                    value={newTable.capacity}
-                    onChange={(e) => setNewTable({...newTable, capacity: parseInt(e.target.value)})}
-                  >
-                    <option value={2}>2 seats</option>
-                    <option value={4}>4 seats</option>
-                    <option value={6}>6 seats</option>
-                    <option value={8}>8 seats</option>
-                  </select>
-                </div>
+
                 <div className="modal-buttons">
                   <button className="button" onClick={() => setShowAddTable(false)}>
                     Cancel
@@ -170,7 +178,6 @@ function MainPage() {
                   onClick={() => handleTableClick(table)}
                 >
                   <div className="table-number-large">Table {table.number}</div>
-                  <div className="table-capacity">Capacity: {table.capacity}</div>
                   <div className={`table-status ${table.status}`}>
                     {table.status}
                   </div>
@@ -213,14 +220,94 @@ function MainPage() {
       {/* Menu Section */}
       {activeTab === 'menu' && (
         <div className="section">
-          <h2>Menu Items</h2>
+          <div className="section-header">
+            <h2>Menu Management</h2>
+            <button className="button success" onClick={() => setShowAddMenuItem(true)}>
+              + Add Menu Item
+            </button>
+          </div>
+
+          {/* Add Menu Item Modal */}
+          {showAddMenuItem && (
+            <div className="modal-overlay">
+              <div className="modal">
+                <h3>Add New Menu Item</h3>
+                <div className="form-group">
+                  <label>Name:</label>
+                  <input
+                    type="text"
+                    value={newMenuItem.name}
+                    onChange={(e) => setNewMenuItem({...newMenuItem, name: e.target.value})}
+                    placeholder="Enter item name"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Description:</label>
+                  <textarea
+                    value={newMenuItem.description}
+                    onChange={(e) => setNewMenuItem({...newMenuItem, description: e.target.value})}
+                    placeholder="Enter item description"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Price (₹):</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={newMenuItem.price}
+                    onChange={(e) => setNewMenuItem({...newMenuItem, price: parseFloat(e.target.value)})}
+                    placeholder="Enter price"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Category:</label>
+                  <select
+                    value={newMenuItem.category}
+                    onChange={(e) => setNewMenuItem({...newMenuItem, category: e.target.value})}
+                  >
+                    <option value="">Select Category</option>
+                    <option value="Beverages">Beverages</option>
+                    <option value="Veg Starters">Veg Starters</option>
+                    <option value="Non-Veg Starters">Non-Veg Starters</option>
+                  </select>
+                </div>
+                <div className="modal-buttons">
+                  <button className="button" onClick={() => setShowAddMenuItem(false)}>
+                    Cancel
+                  </button>
+                  <button className="button success" onClick={addMenuItem}>
+                    Add Item
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="menu-categories">
+            <button 
+              className={`category-btn active`}
+              onClick={() => setActiveTab('menu')}
+            >
+              All Categories
+            </button>
+            {menuCategories.map(category => (
+              <button 
+                key={category}
+                className={`category-btn`}
+                onClick={() => setActiveTab('menu')}
+              >
+                {category}
+              </button>
+            ))}
+          </div>
+
           <div className="grid">
             {menu.map(item => (
               <div key={item.id} className="card">
                 <h3>{item.name}</h3>
                 <p>{item.description}</p>
                 <p><strong>Category:</strong> {item.category}</p>
-                <div className="price">${item.price.toFixed(2)}</div>
+                <div className="price">₹{item.price.toFixed(2)}</div>
               </div>
             ))}
           </div>
@@ -231,41 +318,87 @@ function MainPage() {
       {activeTab === 'orders' && (
         <div className="section">
           <h2>Order Management</h2>
-          <div className="grid">
-            {orders.map(order => (
-              <div key={order.id} className="card">
-                <h3>Order #{order.id}</h3>
-                <p><strong>Table:</strong> {order.table_id}</p>
-                <p><strong>Status:</strong> {order.status}</p>
-                <p><strong>Total:</strong> ${order.total_amount.toFixed(2)}</p>
-                <p><strong>Created:</strong> {new Date(order.created_at).toLocaleString()}</p>
-                
-                <div>
-                  <strong>Items:</strong>
-                  {order.items.map(item => (
-                    <div key={item.id} className="order-item">
-                      <span>{item.menu_item_name}</span>
-                      <span>Qty: {item.quantity}</span>
-                      <span>${item.price.toFixed(2)}</span>
-                    </div>
-                  ))}
-                </div>
+          
+          {/* Search and Filter Controls */}
+          <div className="order-controls">
+            <div className="search-box">
+              <input
+                type="text"
+                placeholder="Search orders by table number or order ID..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="search-input"
+              />
+            </div>
+            <div className="category-filter">
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="category-select"
+              >
+                <option value="all">All Categories</option>
+                <option value="Beverages">Beverages</option>
+                <option value="Veg Starters">Veg Starters</option>
+                <option value="Non-Veg Starters">Non-Veg Starters</option>
+              </select>
+            </div>
+          </div>
 
-                <div style={{ marginTop: '15px' }}>
-                  <select 
-                    value={order.status} 
-                    onChange={(e) => updateOrderStatus(order.id, e.target.value)}
-                    style={{ marginRight: '10px' }}
-                  >
-                    <option value="pending">Pending</option>
-                    <option value="preparing">Preparing</option>
-                    <option value="ready">Ready</option>
-                    <option value="served">Served</option>
-                    <option value="paid">Paid</option>
-                  </select>
+          <div className="grid">
+            {orders
+              .filter(order => {
+                // Filter by search term
+                const searchMatch = searchTerm === '' || 
+                  order.id.toString().includes(searchTerm) ||
+                  order.table_id.toString().includes(searchTerm);
+                
+                // Filter by category
+                const categoryMatch = selectedCategory === 'all' || 
+                  order.items.some(item => {
+                    const menuItem = menu.find(m => m.id === item.menu_item_id);
+                    return menuItem && menuItem.category === selectedCategory;
+                  });
+                
+                return searchMatch && categoryMatch;
+              })
+              .map(order => (
+                <div key={order.id} className="card">
+                  <h3>Order #{order.id}</h3>
+                  <p><strong>Table:</strong> {order.table_id}</p>
+                  <p><strong>Status:</strong> {order.status}</p>
+                  <p><strong>Total:</strong> ₹{order.total_amount.toFixed(2)}</p>
+                  <p><strong>Created:</strong> {new Date(order.created_at).toLocaleString()}</p>
+                  
+                  <div>
+                    <strong>Items:</strong>
+                    {order.items.map(item => {
+                      const menuItem = menu.find(m => m.id === item.menu_item_id);
+                      return (
+                        <div key={item.id} className="order-item">
+                          <span>{item.menu_item_name}</span>
+                          <span>Qty: {item.quantity}</span>
+                          <span>₹{item.price.toFixed(2)}</span>
+                          {menuItem && <span className="item-category">({menuItem.category})</span>}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div style={{ marginTop: '15px' }}>
+                    <select 
+                      value={order.status} 
+                      onChange={(e) => updateOrderStatus(order.id, e.target.value)}
+                      style={{ marginRight: '10px' }}
+                    >
+                      <option value="pending">Pending</option>
+                      <option value="preparing">Preparing</option>
+                      <option value="ready">Ready</option>
+                      <option value="served">Served</option>
+                      <option value="paid">Paid</option>
+                    </select>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
           </div>
         </div>
       )}

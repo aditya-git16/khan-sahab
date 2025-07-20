@@ -25,7 +25,6 @@ class MenuItem(db.Model):
 class Table(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     number = db.Column(db.Integer, unique=True, nullable=False)
-    capacity = db.Column(db.Integer, default=4)
     status = db.Column(db.String(20), default='available')  # available, occupied, reserved
     current_order_id = db.Column(db.Integer, nullable=True)
 
@@ -78,7 +77,11 @@ def health_check():
 # Menu endpoints
 @app.route('/api/menu', methods=['GET'])
 def get_menu():
-    menu_items = MenuItem.query.filter_by(available=True).all()
+    category = request.args.get('category')
+    if category:
+        menu_items = MenuItem.query.filter_by(available=True, category=category).all()
+    else:
+        menu_items = MenuItem.query.filter_by(available=True).all()
     return jsonify([{
         'id': item.id,
         'name': item.name,
@@ -86,6 +89,11 @@ def get_menu():
         'price': item.price,
         'category': item.category
     } for item in menu_items])
+
+@app.route('/api/menu/categories', methods=['GET'])
+def get_menu_categories():
+    categories = db.session.query(MenuItem.category).filter_by(available=True).distinct().all()
+    return jsonify([category[0] for category in categories if category[0]])
 
 @app.route('/api/menu', methods=['POST'])
 def add_menu_item():
@@ -107,7 +115,6 @@ def get_tables():
     return jsonify([{
         'id': table.id,
         'number': table.number,
-        'capacity': table.capacity,
         'status': table.status,
         'current_order_id': table.current_order_id
     } for table in tables])
@@ -116,8 +123,7 @@ def get_tables():
 def add_table():
     data = request.get_json()
     new_table = Table(
-        number=data['number'],
-        capacity=data.get('capacity', 4)
+        number=data['number']
     )
     db.session.add(new_table)
     db.session.commit()
@@ -337,29 +343,61 @@ def init_db():
         db.drop_all()
         db.create_all()
         
-        # Add sample menu items
-        sample_items = [
-            {'name': 'Margherita Pizza', 'description': 'Classic tomato and mozzarella', 'price': 299.00, 'category': 'Pizza'},
-            {'name': 'Pepperoni Pizza', 'description': 'Spicy pepperoni with cheese', 'price': 399.00, 'category': 'Pizza'},
-            {'name': 'Caesar Salad', 'description': 'Fresh romaine with caesar dressing', 'price': 199.00, 'category': 'Salad'},
-            {'name': 'Chicken Wings', 'description': 'Crispy wings with choice of sauce', 'price': 299.00, 'category': 'Appetizer'},
-            {'name': 'Pasta Carbonara', 'description': 'Creamy pasta with bacon', 'price': 349.00, 'category': 'Pasta'},
-            {'name': 'Chocolate Cake', 'description': 'Rich chocolate layer cake', 'price': 149.00, 'category': 'Dessert'},
-            {'name': 'Iced Tea', 'description': 'Refreshing iced tea', 'price': 49.00, 'category': 'Beverage'},
-            {'name': 'Coffee', 'description': 'Fresh brewed coffee', 'price': 39.00, 'category': 'Beverage'}
+        # Add menu items with categories
+        menu_items = [
+            # Beverages
+            {'name': 'M. Water', 'description': 'Mineral Water', 'price': 40.00, 'category': 'Beverages'},
+            {'name': 'Cold Drink', 'description': 'Soft Drinks', 'price': 60.00, 'category': 'Beverages'},
+            {'name': 'Fresh Lime Soda', 'description': 'Fresh Lime Soda', 'price': 120.00, 'category': 'Beverages'},
+            {'name': 'Juice (Paked)', 'description': 'Packaged Juice', 'price': 150.00, 'category': 'Beverages'},
+            {'name': 'Milk Tea', 'description': 'Milk Tea', 'price': 60.00, 'category': 'Beverages'},
+            {'name': 'Green Tea', 'description': 'Green Tea', 'price': 60.00, 'category': 'Beverages'},
+            {'name': 'Black Tea', 'description': 'Black Tea', 'price': 60.00, 'category': 'Beverages'},
+            {'name': 'Mint Mojito', 'description': 'Mint Mojito', 'price': 150.00, 'category': 'Beverages'},
+            {'name': 'Strawberry Mojito', 'description': 'Strawberry Mojito', 'price': 150.00, 'category': 'Beverages'},
+            {'name': 'Midnight Beauty', 'description': 'Midnight Beauty', 'price': 199.00, 'category': 'Beverages'},
+            {'name': 'Cold Coffee/Ice Cream (S)', 'description': 'Small Cold Coffee with Ice Cream', 'price': 159.00, 'category': 'Beverages'},
+            {'name': 'Cold Coffee/Ice Cream (L)', 'description': 'Large Cold Coffee with Ice Cream', 'price': 179.00, 'category': 'Beverages'},
+            {'name': 'Soda With Ice Cream', 'description': 'Soda with Ice Cream', 'price': 199.00, 'category': 'Beverages'},
+            {'name': 'Milk Shake', 'description': 'Milk Shake', 'price': 150.00, 'category': 'Beverages'},
+            {'name': 'Lassi (Sweet/Salted)', 'description': 'Sweet or Salted Lassi', 'price': 100.00, 'category': 'Beverages'},
+            {'name': 'Banana Lassi', 'description': 'Banana Lassi', 'price': 150.00, 'category': 'Beverages'},
+            {'name': 'Mango Lassi', 'description': 'Mango Lassi', 'price': 150.00, 'category': 'Beverages'},
+            
+            # Veg Starters
+            {'name': 'Paneer Tikka', 'description': 'Paneer Tikka', 'price': 449.00, 'category': 'Veg Starters'},
+            {'name': 'Paneer Malai Tikka', 'description': 'Paneer Malai Tikka', 'price': 449.00, 'category': 'Veg Starters'},
+            {'name': 'Paneer Achari Tikka', 'description': 'Paneer Achari Tikka', 'price': 449.00, 'category': 'Veg Starters'},
+            {'name': 'Soya Chaap Tikka', 'description': 'Soya Chaap Tikka', 'price': 499.00, 'category': 'Veg Starters'},
+            {'name': 'Soya Chaap Malai Tikka', 'description': 'Soya Chaap Malai Tikka', 'price': 499.00, 'category': 'Veg Starters'},
+            {'name': 'Soya Amritsari Chaap Tikka', 'description': 'Soya Amritsari Chaap Tikka', 'price': 599.00, 'category': 'Veg Starters'},
+            {'name': 'Mushroom Tikka', 'description': 'Mushroom Tikka', 'price': 499.00, 'category': 'Veg Starters'},
+            
+            # Non-Veg Starters
+            {'name': 'Chicken Tandoori', 'description': 'Chicken Tandoori', 'price': 699.00, 'category': 'Non-Veg Starters'},
+            {'name': 'Chicken Tikka (6 Pcs)', 'description': 'Chicken Tikka - 6 Pieces', 'price': 499.00, 'category': 'Non-Veg Starters'},
+            {'name': 'Garlic Chicken Tikka (6 Pcs)', 'description': 'Garlic Chicken Tikka - 6 Pieces', 'price': 599.00, 'category': 'Non-Veg Starters'},
+            {'name': 'Chicken Malai Tikka (6 Pcs)', 'description': 'Chicken Malai Tikka - 6 Pieces', 'price': 699.00, 'category': 'Non-Veg Starters'},
+            {'name': 'Chicken Afghani', 'description': 'Chicken Afghani', 'price': 699.00, 'category': 'Non-Veg Starters'},
+            {'name': 'Chicken Kabab', 'description': 'Chicken Kabab', 'price': 499.00, 'category': 'Non-Veg Starters'},
+            {'name': 'Mutton Kabab', 'description': 'Mutton Kabab', 'price': 599.00, 'category': 'Non-Veg Starters'},
+            {'name': 'Mutton Tikka', 'description': 'Mutton Tikka', 'price': 699.00, 'category': 'Non-Veg Starters'},
+            {'name': 'Chicken Platter', 'description': 'Chicken Platter', 'price': 799.00, 'category': 'Non-Veg Starters'},
+            {'name': 'Fish Tikka', 'description': 'Fish Tikka', 'price': 599.00, 'category': 'Non-Veg Starters'},
+            {'name': 'Fish Amritsari', 'description': 'Fish Amritsari', 'price': 549.00, 'category': 'Non-Veg Starters'},
         ]
         
-        for item_data in sample_items:
+        for item_data in menu_items:
             item = MenuItem(**item_data)
             db.session.add(item)
         
-        # Add sample tables
+        # Add sample tables (without capacity field)
         for i in range(1, 11):  # 10 tables
-            table = Table(number=i, capacity=4)
+            table = Table(number=i)
             db.session.add(table)
         
         db.session.commit()
-        print("Database initialized with new schema and sample data!")
+        print("Database initialized with new schema and menu items!")
 
 if __name__ == '__main__':
     init_db()
