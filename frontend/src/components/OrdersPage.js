@@ -9,6 +9,8 @@ function OrdersPage() {
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [timeFilter, setTimeFilter] = useState('1day');
+  const [dishSearchTerm, setDishSearchTerm] = useState('');
 
   const API_BASE = 'http://localhost:5001/api';
 
@@ -40,6 +42,38 @@ function OrdersPage() {
     navigate('/');
   };
 
+  // Helper function to format date in Indian Standard Time
+  const formatDateIST = (dateString) => {
+    const date = new Date(dateString);
+    // The date from backend is already in IST, just format it properly
+    return date.toLocaleString('en-IN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    });
+  };
+
+  // Helper function to get time filter date
+  const getTimeFilterDate = () => {
+    const now = new Date();
+    switch (timeFilter) {
+      case '1hour':
+        return new Date(now.getTime() - 60 * 60 * 1000);
+      case '6hours':
+        return new Date(now.getTime() - 6 * 60 * 60 * 1000);
+      case '1day':
+        return new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      case '1week':
+        return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      default:
+        return new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    }
+  };
+
   if (loading) {
     return (
       <div className="container">
@@ -58,7 +92,7 @@ function OrdersPage() {
       </div>
 
       <div className="orders-content">
-        {/* Search and Filter Controls */}
+        {/* Advanced Search and Filter Controls */}
         <div className="order-controls">
           <div className="search-box">
             <input
@@ -68,6 +102,27 @@ function OrdersPage() {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="search-input"
             />
+          </div>
+          <div className="search-box">
+            <input
+              type="text"
+              placeholder="Search by dish name..."
+              value={dishSearchTerm}
+              onChange={(e) => setDishSearchTerm(e.target.value)}
+              className="search-input"
+            />
+          </div>
+          <div className="time-filter">
+            <select
+              value={timeFilter}
+              onChange={(e) => setTimeFilter(e.target.value)}
+              className="time-select"
+            >
+              <option value="1hour">Last 1 Hour</option>
+              <option value="6hours">Last 6 Hours</option>
+              <option value="1day">Last 1 Day</option>
+              <option value="1week">Last 1 Week</option>
+            </select>
           </div>
           <div className="category-filter">
             <select
@@ -94,10 +149,21 @@ function OrdersPage() {
 
         {orders
           .filter(order => {
+            // Filter by time
+            const orderDate = new Date(order.created_at);
+            const timeFilterDate = getTimeFilterDate();
+            const timeMatch = orderDate >= timeFilterDate;
+            
             // Filter by search term
             const searchMatch = searchTerm === '' || 
               order.id.toString().includes(searchTerm) ||
               order.table_id.toString().includes(searchTerm);
+            
+            // Filter by dish search term
+            const dishMatch = dishSearchTerm === '' || 
+              order.items.some(item => 
+                item.menu_item_name.toLowerCase().includes(dishSearchTerm.toLowerCase())
+              );
             
             // Filter by category
             const categoryMatch = selectedCategory === 'all' || 
@@ -106,7 +172,7 @@ function OrdersPage() {
                 return menuItem && menuItem.category === selectedCategory;
               });
             
-            return searchMatch && categoryMatch;
+            return timeMatch && searchMatch && dishMatch && categoryMatch;
           })
           .length === 0 ? (
           <div className="no-orders">

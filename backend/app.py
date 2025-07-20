@@ -1,9 +1,24 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 import os
 from printer import print_bill
+from reportlab.lib.pagesizes import letter, A4
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, BaseDocTemplate
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+from reportlab.lib import colors
+from io import BytesIO
+
+# Helper function to get current IST time
+def get_ist_time():
+    # Get current UTC time
+    utc_now = datetime.now(timezone.utc)
+    # IST is UTC+5:30
+    ist_offset = timedelta(hours=5, minutes=30)
+    ist_time = utc_now + ist_offset
+    return ist_time
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///restaurant.db'
@@ -38,8 +53,8 @@ class Order(db.Model):
     tax_amount = db.Column(db.Float, default=0.0)  # Calculated tax amount
     final_total = db.Column(db.Float, default=0.0)  # Total including tax
     payment_method = db.Column(db.String(20), default='cash')  # cash, card, digital
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=get_ist_time)
+    updated_at = db.Column(db.DateTime, default=get_ist_time, onupdate=get_ist_time)
 
 class OrderItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -66,8 +81,8 @@ class Bill(db.Model):
     tax_amount = db.Column(db.Float, default=0.0)
     total = db.Column(db.Float, nullable=False)
     payment_method = db.Column(db.String(20), default='cash')
-    bill_date = db.Column(db.DateTime, default=datetime.utcnow)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    bill_date = db.Column(db.DateTime, default=get_ist_time)
+    created_at = db.Column(db.DateTime, default=get_ist_time)
 
 # API Routes
 @app.route('/api/health', methods=['GET'])
@@ -271,7 +286,7 @@ def create_bill():
         if existing_bill:
             return jsonify({'message': 'Bill already exists for this order', 'bill_id': existing_bill.id})
         
-        # Create bill record
+        # Create bill record with IST time
         new_bill = Bill(
             order_id=data.get('order_id'),
             invoice_number=data.get('invoice_number'),
@@ -341,6 +356,119 @@ def print_bill_endpoint():
             
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/generate-pdf', methods=['POST'])
+def generate_pdf():
+    data = request.get_json()
+    print(f"Received PDF data: {data}")
+    
+    try:
+        # Create PDF in memory
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=A4)
+        story = []
+        
+        # Get styles
+        styles = getSampleStyleSheet()
+        title_style = ParagraphStyle(
+            name='CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=18,
+            spaceAfter=30,
+            alignment=1,  # Center alignment
+            textColor=colors.darkblue
+        )
+        
+        header_style = ParagraphStyle(
+            name='Header',
+            parent=styles['Heading2'],
+            fontSize=14,
+            spaceAfter=20,
+            textColor=colors.darkblue
+        )
+        
+        normal_style = styles['Normal']
+        
+        # Title
+        story.append(Paragraph("KHAN SAHAB RESTAURANT", title_style))
+        story.append(Paragraph("SALES STATISTICS REPORT", title_style))
+        story.append(Spacer(1, 20))
+        
+        # Report details
+        story.append(Paragraph(f"<b>Time Period:</b> {data.get('timePeriod', 'N/A')}", normal_style))
+        story.append(Paragraph(f"<b>Generated:</b> {get_ist_time().strftime('%d/%m/%Y, %H:%M:%S')}", normal_style))
+        story.append(Spacer(1, 30))
+        
+        # Summary section
+        story.append(Paragraph("SUMMARY", header_style))
+        
+        summary_data = data.get('summary', {})
+        summary_text = f"""
+        <b>Total Sales:</b> Rs. {float(summary_data.get('totalSales', 0)):.2f}<br/>
+        <b>Total Orders:</b> {int(summary_data.get('totalOrders', 0))}<br/>
+        <b>Total Bills:</b> {int(summary_data.get('totalBills', 0))}<br/>
+        <b>Average Order Value:</b> Rs. {float(summary_data.get('averageOrderValue', 0)):.2f}<br/>
+        <b>Total Tax Collected:</b> Rs. {float(summary_data.get('totalTax', 0)):.2f}
+        """
+        story.append(Paragraph(summary_text, normal_style))
+        story.append(Spacer(1, 20))
+        
+        # Top items section
+        story.append(Paragraph("TOP SELLING ITEMS", header_style))
+        
+        top_items = data.get('topItems', [])
+        if top_items:
+            items_text = ""
+            for i, item in enumerate(top_items, 1):
+                items_text += f"{i}. <b>{item.get('name', 'N/A')}</b>: {int(item.get('quantity', 0))} sold, Rs. {float(item.get('revenue', 0)):.2f} revenue<br/>"
+            story.append(Paragraph(items_text, normal_style))
+        else:
+            story.append(Paragraph("No items data available", normal_style))
+        
+        story.append(Spacer(1, 20))
+        
+        # Category breakdown
+        story.append(Paragraph("SALES BY CATEGORY", header_style))
+        
+        categories = data.get('categories', {})
+        if categories:
+            cat_text = ""
+            for category, stats in categories.items():
+                cat_text += f"<b>{category}:</b> Rs. {float(stats.get('revenue', 0)):.2f}<br/>"
+            story.append(Paragraph(cat_text, normal_style))
+        else:
+            story.append(Paragraph("No category data available", normal_style))
+        
+        story.append(Spacer(1, 20))
+        
+        # Payment methods section
+        story.append(Paragraph("PAYMENT METHODS", header_style))
+        
+        payment_methods = data.get('paymentMethods', {})
+        if payment_methods:
+            payment_text = ""
+            for method, stats in payment_methods.items():
+                payment_text += f"<b>{str(method).title()}:</b> {int(stats.get('count', 0))} bills, Rs. {float(stats.get('total', 0)):.2f}<br/>"
+            story.append(Paragraph(payment_text, normal_style))
+        else:
+            story.append(Paragraph("No payment method data available", normal_style))
+        
+        # Build PDF
+        doc.build(story)
+        buffer.seek(0)
+        
+        return send_file(
+            buffer,
+            as_attachment=True,
+            download_name=f"khan-sahab-stat-{get_ist_time().strftime('%Y%m%d_%H%M%S')}.pdf",
+            mimetype='application/pdf'
+        )
+        
+    except Exception as e:
+        print(f"Error generating PDF: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
 
 # Initialize database with sample data
 def init_db():

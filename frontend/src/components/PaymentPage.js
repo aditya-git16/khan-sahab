@@ -55,6 +55,8 @@ function PaymentPage() {
       });
 
       // Generate restaurant bill data in Khan Sahab format
+      const currentDate = new Date();
+      
       const billData = {
         restaurant_name: 'KHAN SAHAB RESTAURANT',
         address: '4, BANSAL NAGAR FATEHABAD ROAD AGRA',
@@ -65,12 +67,13 @@ function PaymentPage() {
         fssai: '12722001001504',
         place_of_supply: 'Uttar Pradesh',
         invoice_number: orderId.toString(),
-        date: new Date().toLocaleDateString('en-GB'), // DD/MM/YYYY format
-        time: new Date().toLocaleTimeString('en-US', { 
+        date: currentDate.toLocaleDateString('en-IN'), // DD/MM/YYYY format
+        time: currentDate.toLocaleTimeString('en-IN', { 
           hour: '2-digit', 
           minute: '2-digit',
-          hour12: true 
-        }).toLowerCase(),
+          second: '2-digit',
+          hour12: false 
+        }),
         items: order.items.map(item => ({
           name: item.menu_item_name,
           qty: item.quantity,
@@ -189,15 +192,16 @@ function PaymentPage() {
                 <p>Place of Supply:</p>
                 <p>Uttar Pradesh</p>
               </div>
-              <div className="bill-info-right">
-                <p>Date: {new Date().toLocaleDateString('en-GB')}</p>
-                <p>Time: {new Date().toLocaleTimeString('en-US', { 
-                  hour: '2-digit', 
-                  minute: '2-digit',
-                  hour12: true 
-                }).toLowerCase()}</p>
-                <p>Invoice no: {orderId}</p>
-              </div>
+                          <div className="bill-info-right">
+              <p>Date: {new Date().toLocaleDateString('en-IN')}</p>
+              <p>Time: {new Date().toLocaleTimeString('en-IN', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false 
+              })}</p>
+              <p>Invoice no: {orderId}</p>
+            </div>
             </div>
             <div className="bill-divider">------------------------------------------------</div>
           </div>
