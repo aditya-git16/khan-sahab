@@ -260,9 +260,24 @@ function MainPage() {
       paymentStats[method].total += bill.total;
     });
 
+    // Format time period properly
+    const formatTimePeriod = (filter) => {
+      switch(filter) {
+        case '1hour': return '1 hour';
+        case '6hours': return '6 hours';
+        case '1day': return '1 day';
+        case '1week': return '1 week';
+        case '1month': return '1 month';
+        case '3months': return '3 months';
+        case '6months': return '6 months';
+        case '1year': return '1 year';
+        default: return filter.replace(/([A-Z])/g, ' $1').toLowerCase();
+      }
+    };
+
     // Prepare data for PDF generation
     const pdfData = {
-      timePeriod: timeFilter.replace(/([A-Z])/g, ' $1').toLowerCase(),
+      timePeriod: formatTimePeriod(timeFilter),
       summary: {
         totalSales,
         totalOrders,

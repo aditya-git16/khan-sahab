@@ -1170,34 +1170,84 @@ body {
 
 .time-select {
   width: 100%;
-  padding: 10px 15px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  font-size: 1rem;
+  padding: 12px 16px;
+  border: 2px solid #e1e5e9;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
   background: white;
   cursor: pointer;
-  transition: border-color 0.3s ease;
+  transition: all 0.2s ease;
+  color: #333;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.time-select:hover {
+  border-color: #667eea;
+  background: #f8f9fa;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
 .time-select:focus {
   outline: none;
   border-color: #667eea;
-  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
 /* Bills Section */
 .bills-controls {
   display: flex;
-  gap: 15px;
-  margin-bottom: 20px;
+  gap: 16px;
+  margin-bottom: 24px;
   align-items: center;
   flex-wrap: wrap;
+  justify-content: space-between;
 }
 
 .bills-actions {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   flex-wrap: wrap;
+  align-items: center;
+}
+
+.bills-actions button {
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 140px;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.bills-actions .export-csv {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+}
+
+.bills-actions .export-csv:hover {
+  background: linear-gradient(135deg, #218838 0%, #1ea085 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(40,167,69,0.3);
+}
+
+.bills-actions .generate-pdf {
+  background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+  color: white;
+}
+
+.bills-actions .generate-pdf:hover {
+  background: linear-gradient(135deg, #c82333 0%, #e55a00 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(220,53,69,0.3);
 }
 
 .bills-summary {

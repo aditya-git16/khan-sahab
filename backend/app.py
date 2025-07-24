@@ -395,7 +395,8 @@ def generate_pdf():
         story.append(Spacer(1, 20))
         
         # Report details
-        story.append(Paragraph(f"<b>Time Period:</b> {data.get('timePeriod', 'N/A')}", normal_style))
+        story.append(Paragraph(f"<b>Summary for {data.get('timePeriod', 'N/A')}</b>", normal_style))
+        story.append(Spacer(1, 10))
         story.append(Paragraph(f"<b>Generated:</b> {get_ist_time().strftime('%d/%m/%Y, %H:%M:%S')}", normal_style))
         story.append(Spacer(1, 30))
         
