@@ -1,430 +1,317 @@
-import socket
-import serial
 import subprocess
 import tempfile
 import os
+import webbrowser
 from datetime import datetime
-from PIL import Image
-import io
+import pytz
 
-class ESCPOSBuilder:
-    def __init__(self):
-        self.buffer = bytearray()
-    
-    def init(self):
-        """Initialize printer"""
-        self.buffer.extend([0x1B, 0x40])  # ESC @
-        return self
-    
-    def text(self, text):
-        """Add text"""
-        self.buffer.extend(text.encode('utf-8'))
-        return self
-    
-    def newline(self):
-        """Add newline"""
-        self.buffer.extend([0x0A])  # LF
-        return self
-    
-    def bold(self, enable=True):
-        """Set bold text"""
-        self.buffer.extend([0x1B, 0x45, 1 if enable else 0])  # ESC E
-        return self
-    
-    def underline(self, enable=True):
-        """Set underline"""
-        self.buffer.extend([0x1B, 0x2D, 1 if enable else 0])  # ESC -
-        return self
-    
-    def font_size(self, size):
-        """Set font size (0=normal, 1=double height, 2=double width, 3=double both)"""
-        self.buffer.extend([0x1B, 0x21, size])  # ESC !
-        return self
-    
-    def align(self, alignment):
-        """Set alignment (0=left, 1=center, 2=right)"""
-        self.buffer.extend([0x1B, 0x61, alignment])  # ESC a
-        return self
-    
-    def line_feed(self, lines=1):
-        """Feed lines"""
-        for _ in range(lines):
-            self.buffer.extend([0x0A])
-        return self
-    
-    def cut(self):
-        """Cut paper"""
-        self.buffer.extend([0x1D, 0x56, 0x00])  # GS V
-        return self
-    
-    def qr_code(self, data, size=6):
-        """Print QR code"""
-        # QR Code model
-        self.buffer.extend([0x1D, 0x28, 0x6B, 0x04, 0x00, 0x31, 0x41, size, 0x00])
-        # Error correction level
-        self.buffer.extend([0x1D, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x43, 0x08])
-        
-        # Store data
-        data_length = len(data) + 3
-        self.buffer.extend([0x1D, 0x28, 0x6B, data_length & 0xFF, (data_length >> 8) & 0xFF, 0x31, 0x50, 0x30])
-        self.buffer.extend(data.encode('utf-8'))
-        
-        # Print QR code
-        self.buffer.extend([0x1D, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x51, 0x30])
-        return self
-    
-    def print_bitmap(self, width, height, bitmap_data):
-        """Print bitmap image (for logos)"""
-        # This is a simplified bitmap implementation
-        # For actual logo printing, you'd need to convert image to monochrome bitmap
-        self.buffer.extend([0x1B, 0x2A, 0x00, width & 0xFF, (width >> 8) & 0xFF])
-        self.buffer.extend(bitmap_data)
-        return self
-    
-    def print_logo_text(self):
-        """Print Khan Sahab logo as text art (fallback)"""
-        # Since we can't print the actual logo image, we'll create a text representation
-        self.align(1)  # Center
-        self.text("┌─────────────────────────────┐").newline()
-        self.text("│        حلال                │").newline()
-        self.text("│   UNIT OF TUAHA FOOD        │").newline()
-        self.text("│                             │").newline()
-        self.text("│        KHAN SAHAB           │").newline()
-        self.text("│                             │").newline()
-        self.text("│         🐐                  │").newline()
-        self.text("└─────────────────────────────┘").newline()
-        self.newline()
-        return self
-    
-    def print_logo_image(self, logo_path='khan_sahab_logo.jpg'):
-        """Print Khan Sahab logo as bitmap image"""
-        try:
-            # Load and process the logo image
-            with Image.open(logo_path) as img:
-                # Convert to grayscale
-                img = img.convert('L')
-                
-                # Resize to fit thermal printer width (typically 384 dots)
-                # Maintain aspect ratio
-                max_width = 384
-                aspect_ratio = img.width / img.height
-                new_width = min(max_width, img.width)
-                new_height = int(new_width / aspect_ratio)
-                
-                img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
-                
-                # Convert to binary (black and white)
-                threshold = 128
-                img = img.point(lambda x: 0 if x < threshold else 255, '1')
-                
-                # Convert to bitmap data
-                bitmap_data = []
-                for y in range(img.height):
-                    row = []
-                    for x in range(0, img.width, 8):
-                        byte = 0
-                        for bit in range(8):
-                            if x + bit < img.width:
-                                pixel = img.getpixel((x + bit, y))
-                                if pixel == 0:  # Black pixel
-                                    byte |= (1 << (7 - bit))
-                        row.append(byte)
-                    bitmap_data.extend(row)
-                
-                # Print the bitmap
-                self.align(1)  # Center
-                self.print_bitmap(img.width, img.height, bitmap_data)
-                self.newline()
-                
-        except Exception as e:
-            print(f"Error printing logo image: {e}")
-            # Fallback to text logo
-            self.print_logo_text()
-        
-        return self
-    
-    def build(self):
-        """Get the complete command buffer"""
-        return bytes(self.buffer)
-
-class RestaurantBillGenerator:
+class HTMLBillGenerator:
     @staticmethod
-    def generate_bill(bill_data):
-        """Generate ESC/POS commands for restaurant bill matching Khan Sahab format"""
-        builder = ESCPOSBuilder()
+    def get_ist_time():
+        """Get current time in IST"""
+        ist = pytz.timezone('Asia/Kolkata')
+        return datetime.now(ist)
+    
+    @staticmethod
+    def format_ist_date(date_obj=None):
+        """Format date in IST"""
+        if date_obj is None:
+            date_obj = HTMLBillGenerator.get_ist_time()
+        return date_obj.strftime('%d/%m/%Y')
+    
+    @staticmethod
+    def format_ist_time(date_obj=None):
+        """Format time in IST"""
+        if date_obj is None:
+            date_obj = HTMLBillGenerator.get_ist_time()
+        return date_obj.strftime('%I:%M %p').lower()
+
+class RestaurantBillGenerator(HTMLBillGenerator):
+    @staticmethod
+    def generate_html_bill(bill_data):
+        """Generate HTML bill for print preview and Windows printing"""
+        # Use IST times
+        current_time = HTMLBillGenerator.get_ist_time()
+        current_date = HTMLBillGenerator.format_ist_date(current_time)
+        current_time_str = HTMLBillGenerator.format_ist_time(current_time)
         
-        # Initialize printer
-        builder.init()
-        
-        # Print Khan Sahab logo
-        builder.print_logo_image()
-        
-        # Restaurant name - large and bold
-        builder.font_size(1).bold(True)
-        builder.text(bill_data.get('restaurant_name', 'KHAN SAHAB RESTAURANT'))
-        builder.newline()
-        
-        # Address and details - normal size
-        builder.font_size(0).bold(False)
-        builder.text(bill_data.get('address', '4, BANSAL NAGAR FATEHABAD ROAD AGRA'))
-        builder.newline()
-        builder.text(f"State: {bill_data.get('state', 'Uttar Pradesh')} ({bill_data.get('state_code', '09')})")
-        builder.newline()
-        builder.text(f"Phone: {bill_data.get('phone', '9319209322')}")
-        builder.newline()
-        builder.text(f"GSTIN: {bill_data.get('gstin', '09AHDPA1039P2ZB')}")
-        builder.newline()
-        builder.text(f"FSSAI: {bill_data.get('fssai', '12722001001504')}")
-        builder.newline()
-        
-        # Separator line
-        builder.text('-' * 48).newline()
-        
-        # Tax Invoice header
-        builder.align(1).bold(True)
-        builder.text('Tax Invoice').newline()
-        builder.bold(False).align(0)
-        
-        # Invoice details - two columns
-        builder.text('Cash Sale').newline()
-        builder.text(f"Place of Supply:").newline()
-        builder.text(f"{bill_data.get('place_of_supply', 'Uttar Pradesh')}")
-        
-        # Move cursor up and print right side (simulated)
-        current_date = datetime.now().strftime('%d/%m/%Y')
-        current_time = datetime.now().strftime('%I:%M %p').lower()
-        
-        # Since thermal printers don't support true columns, we'll format it differently
-        builder.newline()
-        builder.text(f"Date: {bill_data.get('date', current_date)}")
-        builder.newline()
-        builder.text(f"Time: {bill_data.get('time', current_time)}")
-        builder.newline()
-        builder.text(f"Invoice no: {bill_data.get('invoice_number', '1')}")
-        builder.newline()
-        
-        # Item header
-        builder.text('-' * 48).newline()
-        builder.text('Item Name                   Qty    Price    Amount')
-        builder.newline()
-        builder.text('-' * 48).newline()
-        
-        # Items
+        # Calculate totals
         subtotal = 0
         for item in bill_data.get('items', []):
             qty = item.get('qty', 1)
             price = item.get('price', 0)
             amount = qty * price
             subtotal += amount
-            
-            # Format item line to match preview
-            name = item['name'][:20] if len(item['name']) > 20 else item['name']
-            item_line = f"{name:<20} x{qty}    {price:.2f}    {amount:.2f}"
-            builder.text(item_line).newline()
         
-        builder.text('-' * 48).newline()
-        
-        # Calculate taxes based on tax_rate from bill_data
         tax_rate = bill_data.get('tax_rate', 0.05)  # Default 5% GST
         tax_amount = subtotal * tax_rate
         total = subtotal + tax_amount
         
-        # Totals
-        builder.text(f"Subtotal{' ' * 32}{subtotal:.2f}").newline()
-        if tax_rate > 0:
-            builder.text(f"Taxes{' ' * 35}{tax_amount:.2f}").newline()
-        builder.bold(True)
-        builder.text(f"Total{' ' * 35}{total:.2f}").newline()
-        builder.bold(False)
+        # Generate items HTML
+        items_html = ""
+        for item in bill_data.get('items', []):
+            qty = item.get('qty', 1)
+            price = item.get('price', 0)
+            amount = qty * price
+            items_html += f"""
+            <tr>
+                <td>{item['name']}</td>
+                <td>x{qty}</td>
+                <td>₹{price:.2f}</td>
+                <td>₹{amount:.2f}</td>
+            </tr>
+            """
         
-        builder.text('-' * 48).newline()
-        
-        # Tax breakdown header (only if tax is applied)
-        if tax_rate > 0:
-            builder.text('Tax Type          Taxable Amt    Tax Amt')
-            builder.newline()
-            builder.text('-' * 48).newline()
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>Khan Sahab Restaurant - Invoice #{bill_data.get('invoice_number', '1')}</title>
+            <style>
+                @page {{
+                    margin: 0.5in;
+                    size: A4;
+                }}
+                
+                body {{
+                    font-family: 'Courier New', monospace;
+                    font-size: 12px;
+                    line-height: 1.4;
+                    margin: 0;
+                    padding: 20px;
+                    max-width: 80mm;
+                    margin: 0 auto;
+                }}
+                
+                .header {{
+                    text-align: center;
+                    border-bottom: 2px solid #000;
+                    padding-bottom: 10px;
+                    margin-bottom: 15px;
+                }}
+                
+                .logo {{
+                    width: 60px;
+                    height: 60px;
+                    margin: 0 auto 10px auto;
+                    background: #f0f0f0;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 24px;
+                }}
+                
+                .restaurant-name {{
+                    font-size: 18px;
+                    font-weight: bold;
+                    margin: 10px 0;
+                }}
+                
+                .address {{
+                    font-size: 10px;
+                    margin: 5px 0;
+                }}
+                
+                .invoice-details {{
+                    margin: 15px 0;
+                    border-bottom: 1px solid #000;
+                    padding-bottom: 10px;
+                }}
+                
+                .invoice-details h3 {{
+                    text-align: center;
+                    margin: 10px 0;
+                    font-size: 14px;
+                }}
+                
+                .details-row {{
+                    display: flex;
+                    justify-content: space-between;
+                    margin: 5px 0;
+                }}
+                
+                .items-table {{
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin: 15px 0;
+                }}
+                
+                .items-table th,
+                .items-table td {{
+                    text-align: left;
+                    padding: 5px 2px;
+                    border-bottom: 1px solid #000;
+                }}
+                
+                .items-table th {{
+                    font-weight: bold;
+                    background: #f5f5f5;
+                }}
+                
+                .totals {{
+                    margin-top: 15px;
+                    border-top: 2px solid #000;
+                    padding-top: 10px;
+                }}
+                
+                .total-row {{
+                    display: flex;
+                    justify-content: space-between;
+                    margin: 5px 0;
+                }}
+                
+                .total-row.final {{
+                    font-weight: bold;
+                    font-size: 14px;
+                    border-top: 1px solid #000;
+                    padding-top: 5px;
+                }}
+                
+                .tax-breakdown {{
+                    margin: 15px 0;
+                    border-top: 1px solid #000;
+                    padding-top: 10px;
+                }}
+                
+                .footer {{
+                    text-align: center;
+                    margin-top: 20px;
+                    border-top: 1px solid #000;
+                    padding-top: 10px;
+                }}
+                
+                @media print {{
+                    body {{
+                        max-width: none;
+                        padding: 0;
+                    }}
+                    
+                    .no-print {{
+                        display: none;
+                    }}
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <div class="logo">🐐</div>
+                <div style="font-size: 10px;">حلال</div>
+                <div style="font-size: 10px;">UNIT OF TUAHA FOOD</div>
+                <div class="restaurant-name">{bill_data.get('restaurant_name', 'KHAN SAHAB RESTAURANT')}</div>
+                <div class="address">{bill_data.get('address', '4, BANSAL NAGAR FATEHABAD ROAD AGRA')}</div>
+                <div class="address">State: {bill_data.get('state', 'Uttar Pradesh')} ({bill_data.get('state_code', '09')})</div>
+                <div class="address">Phone: {bill_data.get('phone', '9319209322')}</div>
+                <div class="address">GSTIN: {bill_data.get('gstin', '09AHDPA1039P2ZB')}</div>
+                <div class="address">FSSAI: {bill_data.get('fssai', '12722001001504')}</div>
+            </div>
             
-            # GST breakdown
-            gst_text = f"GST@{int(tax_rate*100)}%"
-            builder.text(f"{gst_text:<18}{subtotal:.2f}      {tax_amount:.2f}")
-            builder.newline()
+            <div class="invoice-details">
+                <h3>Tax Invoice</h3>
+                <div class="details-row">
+                    <span>Cash Sale</span>
+                    <span>Date: {bill_data.get('date', current_date)}</span>
+                </div>
+                <div class="details-row">
+                    <span>Place of Supply: {bill_data.get('place_of_supply', 'Uttar Pradesh')}</span>
+                    <span>Time: {bill_data.get('time', current_time_str)}</span>
+                </div>
+                <div class="details-row">
+                    <span></span>
+                    <span>Invoice no: {bill_data.get('invoice_number', '1')}</span>
+                </div>
+            </div>
             
-            builder.text('-' * 48).newline()
+            <table class="items-table">
+                <thead>
+                    <tr>
+                        <th>Item Name</th>
+                        <th>Qty</th>
+                        <th>Price</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {items_html}
+                </tbody>
+            </table>
+            
+            <div class="totals">
+                <div class="total-row">
+                    <span>Subtotal</span>
+                    <span>₹{subtotal:.2f}</span>
+                </div>
+                {"<div class='total-row'><span>Taxes (GST @" + str(int(tax_rate*100)) + "%)</span><span>₹" + f"{tax_amount:.2f}" + "</span></div>" if tax_rate > 0 else ""}
+                <div class="total-row final">
+                    <span>Total</span>
+                    <span>₹{total:.2f}</span>
+                </div>
+            </div>
+            
+            {"<div class='tax-breakdown'><h4>Tax Breakdown</h4><div class='total-row'><span>GST@" + str(int(tax_rate*100)) + "%</span><span>Taxable: ₹" + f"{subtotal:.2f}" + " | Tax: ₹" + f"{tax_amount:.2f}" + "</span></div></div>" if tax_rate > 0 else ""}
+            
+            <div class="footer">
+                <p>Thank you for your visit!</p>
+                <p>Please come again</p>
+            </div>
+            
+            <div class="no-print" style="text-align: center; margin-top: 20px;">
+                <button onclick="window.print()" style="padding: 10px 20px; font-size: 16px; background: #007cba; color: white; border: none; border-radius: 5px; cursor: pointer;">Print Bill</button>
+                <button onclick="window.close()" style="padding: 10px 20px; font-size: 16px; background: #666; color: white; border: none; border-radius: 5px; cursor: pointer; margin-left: 10px;">Close</button>
+            </div>
+        </body>
+        </html>
+        """
         
-        # Footer
-        builder.align(1)
-        builder.newline()
-        builder.text('Thank you for your visit!')
-        builder.newline()
-        
-        # QR code for digital receipt (optional)
-        if bill_data.get('receipt_url'):
-            builder.qr_code(bill_data['receipt_url'])
-            builder.newline()
-        
-        # Feed and cut
-        builder.line_feed(3)
-        builder.cut()
-        
-        return builder.build()
+        return html_content
 
-class BillGenerator:
+class WindowsPrintHandler:
     @staticmethod
-    def generate_bill(bill_data):
-        """Generate ESC/POS commands for a bill (legacy format)"""
-        builder = ESCPOSBuilder()
-        
-        # Header
-        builder.init()
-        builder.align(1).font_size(3).bold(True)
-        builder.text(bill_data.get('store_name', 'Restaurant Management')).newline()
-        
-        builder.font_size(0).bold(False)
-        builder.text(bill_data.get('store_address', '123 Main Street')).newline()
-        builder.text(f"Tel: {bill_data.get('phone', '555-0123')}").newline()
-        builder.text('=' * 32).newline()
-        
-        # Invoice details
-        builder.align(0).bold(True)
-        builder.text(f"Invoice #: {bill_data['invoice_number']}").newline()
-        builder.text(f"Date: {datetime.now().strftime('%Y-%m-%d %H:%M')}").newline()
-        builder.text(f"Table: {bill_data.get('table_id', 'N/A')}").newline()
-        builder.text(f"Cashier: {bill_data.get('cashier', 'System')}").newline()
-        builder.bold(False)
-        builder.text('=' * 32).newline()
-        
-        # Items
-        for item in bill_data['items']:
-            name = item['name'][:20] if len(item['name']) > 20 else item['name']
-            line = f"{name:<20} {item['qty']}x{item['price']:.2f}"
-            builder.text(line).newline()
-            line2 = f"{'':20} {(item['qty'] * item['price']):.2f}"
-            builder.text(line2).newline()
-        
-        # Totals
-        builder.text('=' * 32).newline()
-        builder.bold(True)
-        builder.text(f"Subtotal: ${bill_data['subtotal']:.2f}".rjust(32)).newline()
-        if bill_data.get('tax', 0) > 0:
-            builder.text(f"Tax: ${bill_data['tax']:.2f}".rjust(32)).newline()
-        builder.font_size(1)
-        builder.text(f"TOTAL: ${bill_data['total']:.2f}".rjust(32)).newline()
-        
-        # Payment method
-        builder.font_size(0).bold(False)
-        builder.text('=' * 32).newline()
-        builder.align(1)
-        builder.text(f"Payment: {bill_data.get('payment_method', 'CASH').upper()}").newline()
-        
-        # Footer
-        builder.text('=' * 32).newline()
-        builder.text('Thank you for your business!').newline()
-        builder.text('Please come again').newline()
-        
-        # QR Code (optional)
-        if 'receipt_url' in bill_data:
-            builder.qr_code(bill_data['receipt_url']).newline()
-        
-        builder.line_feed(3)
-        builder.cut()
-        
-        return builder.build()
-
-class PrinterConnection:
-    @staticmethod
-    def print_via_network(printer_ip, port, data, timeout=5):
-        """Print via network (WiFi/Ethernet)"""
+    def create_print_preview(bill_data, bill_format='restaurant'):
+        """Create HTML print preview and open in browser for Windows printing"""
         try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(timeout)
-            sock.connect((printer_ip, port))
-            sock.send(data)
-            response = sock.recv(1024)  # Get any response
-            sock.close()
-            return True
-        except Exception as e:
-            print(f"Network print error: {e}")
-            return False
-    
-    @staticmethod
-    def print_via_serial(port_path, data, baud_rate=9600, timeout=5):
-        """Print via USB/Serial"""
-        try:
-            with serial.Serial(port_path, baud_rate, timeout=timeout) as ser:
-                ser.write(data)
-                return True
-        except Exception as e:
-            print(f"Serial print error: {e}")
-            return False
-    
-    @staticmethod
-    def print_via_system(printer_name, data):
-        """Print via system printer (CUPS on Linux)"""
-        try:
-            with tempfile.NamedTemporaryFile(delete=False, suffix='.prn') as temp_file:
-                temp_file.write(data)
+            # Generate HTML content based on format
+            if bill_format == 'restaurant':
+                html_content = RestaurantBillGenerator.generate_html_bill(bill_data)
+            else:
+                html_content = RestaurantBillGenerator.generate_html_bill(bill_data)  # Use restaurant format as default
+            
+            # Create temporary HTML file
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.html', delete=False, encoding='utf-8') as temp_file:
+                temp_file.write(html_content)
                 temp_file_path = temp_file.name
             
-            # Use lpr command to print
-            result = subprocess.run(['lpr', '-P', printer_name, temp_file_path], 
-                                   capture_output=True, text=True)
+            # Open in default browser for print preview
+            webbrowser.open(f'file://{temp_file_path}')
             
-            # Clean up temp file
-            os.unlink(temp_file_path)
+            print(f"Print preview opened in browser: {bill_data.get('invoice_number', 'Unknown')}")
+            return temp_file_path
             
-            return result.returncode == 0
         except Exception as e:
-            print(f"System print error: {e}")
-            return False
+            print(f"Error creating print preview: {e}")
+            return None
 
 def print_bill(bill_data, printer_config=None, bill_format='restaurant'):
-    """Main function to print a bill"""
+    """
+    Main function to print a bill using Windows system print dialog
+    
+    This implementation creates an HTML preview and opens it in browser,
+    allowing users to select any printer through Windows print dialog.
+    The printer_config parameter is kept for API compatibility but not used
+    since we rely on Windows system printer selection.
+    """
     try:
-        # Generate print data based on format
-        if bill_format == 'restaurant':
-            print_data = RestaurantBillGenerator.generate_bill(bill_data)
+        # Use Windows print handler for print preview and dialog
+        temp_file_path = WindowsPrintHandler.create_print_preview(bill_data, bill_format)
+        
+        if temp_file_path:
+            print(f"Print preview created successfully for invoice: {bill_data.get('invoice_number', 'Unknown')}")
+            print("Click 'Print Bill' in the browser window to open Windows print dialog")
+            return temp_file_path
         else:
-            print_data = BillGenerator.generate_bill(bill_data)
-        
-        # Default printer config
-        if not printer_config:
-            printer_config = {
-                'type': 'network',
-                'ip': '192.168.1.100',
-                'port': 9100
-            }
-        
-        printer_type = printer_config.get('type', 'network')
-        success = False
-        
-        if printer_type == 'network':
-            success = PrinterConnection.print_via_network(
-                printer_config.get('ip', '192.168.1.100'),
-                printer_config.get('port', 9100),
-                print_data
-            )
-        elif printer_type == 'serial':
-            success = PrinterConnection.print_via_serial(
-                printer_config.get('port', '/dev/ttyUSB0'),
-                print_data,
-                printer_config.get('baud_rate', 9600)
-            )
-        elif printer_type == 'system':
-            success = PrinterConnection.print_via_system(
-                printer_config.get('name', 'default'),
-                print_data
-            )
-        else:
-            print(f"Unknown printer type: {printer_type}")
+            print("Failed to create print preview")
             return False
-        
-        if success:
-            print(f"Bill printed successfully: {bill_data.get('invoice_number', 'Unknown')}")
-        else:
-            print("Failed to print bill")
-        
-        return success
         
     except Exception as e:
         print(f"Error printing bill: {e}")
@@ -443,8 +330,6 @@ if __name__ == '__main__':
         'fssai': '12722001001504',
         'place_of_supply': 'Uttar Pradesh',
         'invoice_number': '3',
-        'date': '20/07/2025',
-        'time': '09:41 pm',
         'items': [
             {'name': 'Banana Lassi', 'qty': 1, 'price': 150.00},
             {'name': 'Paneer Tikka', 'qty': 1, 'price': 449.00},
@@ -455,5 +340,12 @@ if __name__ == '__main__':
         'receipt_url': 'https://khansahabrestaurant.com/receipt/3'
     }
     
-    # Test print (will fail if no printer is connected)
-    print_bill(sample_restaurant_bill, bill_format='restaurant') 
+    # Test print preview (opens browser with print dialog)
+    print("Opening print preview...")
+    result = print_bill(sample_restaurant_bill, bill_format='restaurant')
+    
+    if result:
+        print(f"Print preview file created: {result}")
+        print("Use Ctrl+P in the browser or click 'Print Bill' to open Windows print dialog")
+    else:
+        print("Failed to create print preview") 
