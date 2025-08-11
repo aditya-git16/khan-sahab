@@ -29,7 +29,7 @@ class HTMLBillGenerator:
 class RestaurantBillGenerator(HTMLBillGenerator):
     @staticmethod
     def generate_html_bill(bill_data):
-        """Generate HTML bill for print preview and Windows printing"""
+        """Generate HTML bill optimized for 80mm thermal printer"""
         # Use IST times
         current_time = HTMLBillGenerator.get_ist_time()
         current_date = HTMLBillGenerator.format_ist_date(current_time)
@@ -55,10 +55,10 @@ class RestaurantBillGenerator(HTMLBillGenerator):
             amount = qty * price
             items_html += f"""
             <tr>
-                <td>{item['name']}</td>
-                <td>x{qty}</td>
-                <td>₹{price:.2f}</td>
-                <td>₹{amount:.2f}</td>
+                <td style="padding: 2px 0; border-bottom: 1px dotted #ccc;">{item['name']}</td>
+                <td style="padding: 2px 0; border-bottom: 1px dotted #ccc; text-align: center;">{qty}</td>
+                <td style="padding: 2px 0; border-bottom: 1px dotted #ccc; text-align: right;">₹{price:.2f}</td>
+                <td style="padding: 2px 0; border-bottom: 1px dotted #ccc; text-align: right;">₹{amount:.2f}</td>
             </tr>
             """
         
@@ -70,166 +70,200 @@ class RestaurantBillGenerator(HTMLBillGenerator):
             <title>Khan Sahab Restaurant - Invoice #{bill_data.get('invoice_number', '1')}</title>
             <style>
                 @page {{
-                    margin: 0.5in;
-                    size: A4;
+                    margin: 0;
+                    size: 80mm auto;
+                }}
+                
+                * {{
+                    margin: 0;
+                    padding: 0;
+                    box-sizing: border-box;
                 }}
                 
                 body {{
                     font-family: 'Courier New', monospace;
-                    font-size: 12px;
-                    line-height: 1.4;
+                    font-size: 11px;
+                    line-height: 1.2;
+                    width: 80mm;
                     margin: 0;
-                    padding: 20px;
-                    max-width: 80mm;
-                    margin: 0 auto;
+                    padding: 5mm;
+                    background: white;
+                    color: black;
                 }}
                 
                 .header {{
                     text-align: center;
-                    border-bottom: 2px solid #000;
-                    padding-bottom: 10px;
-                    margin-bottom: 15px;
+                    border-bottom: 1px solid #000;
+                    padding-bottom: 8px;
+                    margin-bottom: 8px;
                 }}
                 
                 .logo {{
-                    width: 60px;
-                    height: 60px;
-                    margin: 0 auto 10px auto;
-                    background: #f0f0f0;
-                    border-radius: 50%;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-size: 24px;
+                    font-size: 20px;
+                    margin: 5px 0;
+                    font-weight: bold;
                 }}
                 
                 .restaurant-name {{
-                    font-size: 18px;
+                    font-size: 14px;
                     font-weight: bold;
-                    margin: 10px 0;
+                    margin: 5px 0;
+                    text-transform: uppercase;
                 }}
                 
                 .address {{
-                    font-size: 10px;
-                    margin: 5px 0;
+                    font-size: 9px;
+                    margin: 2px 0;
+                    line-height: 1.1;
+                }}
+                
+                .halal {{
+                    font-size: 8px;
+                    margin: 2px 0;
                 }}
                 
                 .invoice-details {{
-                    margin: 15px 0;
+                    margin: 8px 0;
                     border-bottom: 1px solid #000;
-                    padding-bottom: 10px;
+                    padding-bottom: 8px;
                 }}
                 
-                .invoice-details h3 {{
+                .invoice-title {{
                     text-align: center;
-                    margin: 10px 0;
-                    font-size: 14px;
+                    font-weight: bold;
+                    font-size: 12px;
+                    margin-bottom: 5px;
                 }}
                 
-                .details-row {{
+                .detail-row {{
                     display: flex;
                     justify-content: space-between;
-                    margin: 5px 0;
+                    margin: 2px 0;
+                    font-size: 10px;
                 }}
                 
                 .items-table {{
                     width: 100%;
                     border-collapse: collapse;
-                    margin: 15px 0;
-                }}
-                
-                .items-table th,
-                .items-table td {{
-                    text-align: left;
-                    padding: 5px 2px;
-                    border-bottom: 1px solid #000;
+                    margin: 8px 0;
+                    font-size: 10px;
                 }}
                 
                 .items-table th {{
+                    text-align: left;
+                    padding: 3px 0;
+                    border-bottom: 1px solid #000;
                     font-weight: bold;
-                    background: #f5f5f5;
+                    font-size: 10px;
+                }}
+                
+                .items-table td {{
+                    padding: 2px 0;
+                    border-bottom: 1px dotted #ccc;
+                    font-size: 9px;
                 }}
                 
                 .totals {{
-                    margin-top: 15px;
-                    border-top: 2px solid #000;
-                    padding-top: 10px;
+                    margin-top: 8px;
+                    border-top: 1px solid #000;
+                    padding-top: 5px;
                 }}
                 
                 .total-row {{
                     display: flex;
                     justify-content: space-between;
-                    margin: 5px 0;
+                    margin: 2px 0;
+                    font-size: 10px;
                 }}
                 
                 .total-row.final {{
                     font-weight: bold;
-                    font-size: 14px;
+                    font-size: 12px;
                     border-top: 1px solid #000;
-                    padding-top: 5px;
-                }}
-                
-                .tax-breakdown {{
-                    margin: 15px 0;
-                    border-top: 1px solid #000;
-                    padding-top: 10px;
+                    padding-top: 3px;
+                    margin-top: 3px;
                 }}
                 
                 .footer {{
                     text-align: center;
-                    margin-top: 20px;
+                    margin-top: 10px;
                     border-top: 1px solid #000;
-                    padding-top: 10px;
+                    padding-top: 5px;
+                    font-size: 9px;
                 }}
                 
+                .tax-breakdown {{
+                    margin: 5px 0;
+                    font-size: 9px;
+                }}
+                
+                /* Print-specific styles */
                 @media print {{
                     body {{
-                        max-width: none;
-                        padding: 0;
+                        width: 80mm;
+                        margin: 0;
+                        padding: 2mm;
                     }}
                     
                     .no-print {{
-                        display: none;
+                        display: none !important;
+                    }}
+                    
+                    .header {{
+                        page-break-inside: avoid;
+                    }}
+                    
+                    .items-table {{
+                        page-break-inside: avoid;
+                    }}
+                }}
+                
+                /* Screen-only styles for preview */
+                @media screen {{
+                    body {{
+                        border: 1px solid #ccc;
+                        margin: 20px auto;
+                        box-shadow: 0 0 10px rgba(0,0,0,0.1);
                     }}
                 }}
             </style>
         </head>
         <body>
             <div class="header">
-                <div class="logo">🐐</div>
-                <div style="font-size: 10px;">حلال</div>
-                <div style="font-size: 10px;">UNIT OF TUAHA FOOD</div>
+                <div class="logo">KHAN SAHAB</div>
+                <div class="halal">حلال - HALAL</div>
+                <div class="halal">UNIT OF TUAHA FOOD</div>
                 <div class="restaurant-name">{bill_data.get('restaurant_name', 'KHAN SAHAB RESTAURANT')}</div>
                 <div class="address">{bill_data.get('address', '4, BANSAL NAGAR FATEHABAD ROAD AGRA')}</div>
                 <div class="address">State: {bill_data.get('state', 'Uttar Pradesh')} ({bill_data.get('state_code', '09')})</div>
-                <div class="address">Phone: {bill_data.get('phone', '9319209322')}</div>
+                <div class="address">Ph: {bill_data.get('phone', '9319209322')}</div>
                 <div class="address">GSTIN: {bill_data.get('gstin', '09AHDPA1039P2ZB')}</div>
                 <div class="address">FSSAI: {bill_data.get('fssai', '12722001001504')}</div>
             </div>
             
             <div class="invoice-details">
-                <h3>Tax Invoice</h3>
-                <div class="details-row">
+                <div class="invoice-title">TAX INVOICE</div>
+                <div class="detail-row">
                     <span>Cash Sale</span>
                     <span>Date: {bill_data.get('date', current_date)}</span>
                 </div>
-                <div class="details-row">
-                    <span>Place of Supply: {bill_data.get('place_of_supply', 'Uttar Pradesh')}</span>
+                <div class="detail-row">
+                    <span>Invoice: {bill_data.get('invoice_number', '1')}</span>
                     <span>Time: {bill_data.get('time', current_time_str)}</span>
                 </div>
-                <div class="details-row">
+                <div class="detail-row">
+                    <span>Place of Supply: {bill_data.get('place_of_supply', 'Uttar Pradesh')}</span>
                     <span></span>
-                    <span>Invoice no: {bill_data.get('invoice_number', '1')}</span>
                 </div>
             </div>
             
             <table class="items-table">
                 <thead>
                     <tr>
-                        <th>Item Name</th>
-                        <th>Qty</th>
-                        <th>Price</th>
-                        <th>Amount</th>
+                        <th style="width: 45%;">Item</th>
+                        <th style="width: 15%; text-align: center;">Qty</th>
+                        <th style="width: 20%; text-align: right;">Rate</th>
+                        <th style="width: 20%; text-align: right;">Amount</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -242,23 +276,26 @@ class RestaurantBillGenerator(HTMLBillGenerator):
                     <span>Subtotal</span>
                     <span>₹{subtotal:.2f}</span>
                 </div>
-                {"<div class='total-row'><span>Taxes (GST @" + str(int(tax_rate*100)) + "%)</span><span>₹" + f"{tax_amount:.2f}" + "</span></div>" if tax_rate > 0 else ""}
+                {"<div class='total-row'><span>GST @" + str(int(tax_rate*100)) + "%</span><span>₹" + f"{tax_amount:.2f}" + "</span></div>" if tax_rate > 0 else ""}
                 <div class="total-row final">
-                    <span>Total</span>
+                    <span>TOTAL</span>
                     <span>₹{total:.2f}</span>
                 </div>
             </div>
             
-            {"<div class='tax-breakdown'><h4>Tax Breakdown</h4><div class='total-row'><span>GST@" + str(int(tax_rate*100)) + "%</span><span>Taxable: ₹" + f"{subtotal:.2f}" + " | Tax: ₹" + f"{tax_amount:.2f}" + "</span></div></div>" if tax_rate > 0 else ""}
+            {"<div class='tax-breakdown'>GST@" + str(int(tax_rate*100)) + "% - Taxable: ₹" + f"{subtotal:.2f}" + " | Tax: ₹" + f"{tax_amount:.2f}" + "</div>" if tax_rate > 0 else ""}
             
             <div class="footer">
                 <p>Thank you for your visit!</p>
                 <p>Please come again</p>
             </div>
             
-            <div class="no-print" style="text-align: center; margin-top: 20px;">
-                <button onclick="window.print()" style="padding: 10px 20px; font-size: 16px; background: #007cba; color: white; border: none; border-radius: 5px; cursor: pointer;">Print Bill</button>
-                <button onclick="window.close()" style="padding: 10px 20px; font-size: 16px; background: #666; color: white; border: none; border-radius: 5px; cursor: pointer; margin-left: 10px;">Close</button>
+            <div class="no-print" style="text-align: center; margin-top: 15px; background: #f5f5f5; padding: 10px; border-radius: 5px;">
+                <button onclick="window.print()" style="padding: 8px 16px; font-size: 14px; background: #007cba; color: white; border: none; border-radius: 3px; cursor: pointer; margin-right: 10px;">Print Bill</button>
+                <button onclick="window.close()" style="padding: 8px 16px; font-size: 14px; background: #666; color: white; border: none; border-radius: 3px; cursor: pointer;">Close</button>
+                <div style="margin-top: 8px; font-size: 11px; color: #666;">
+                    Optimized for 80mm thermal printer
+                </div>
             </div>
         </body>
         </html>
