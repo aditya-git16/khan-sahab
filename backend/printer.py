@@ -55,10 +55,10 @@ class RestaurantBillGenerator(HTMLBillGenerator):
             amount = qty * price
             items_html += f"""
             <tr>
-                <td style="padding: 2px 0; border-bottom: 1px dotted #ccc;">{item['name']}</td>
-                <td style="padding: 2px 0; border-bottom: 1px dotted #ccc; text-align: center;">{qty}</td>
-                <td style="padding: 2px 0; border-bottom: 1px dotted #ccc; text-align: right;">₹{price:.2f}</td>
-                <td style="padding: 2px 0; border-bottom: 1px dotted #ccc; text-align: right;">₹{amount:.2f}</td>
+                <td style="padding: 2px 0; border-bottom: 1px solid #333; font-weight: bold;">{item['name']}</td>
+                <td style="padding: 2px 0; border-bottom: 1px solid #333; text-align: center; font-weight: bold;">{qty}</td>
+                <td style="padding: 2px 0; border-bottom: 1px solid #333; text-align: right; font-weight: bold;">₹{price:.2f}</td>
+                <td style="padding: 2px 0; border-bottom: 1px solid #333; text-align: right; font-weight: bold;">₹{amount:.2f}</td>
             </tr>
             """
         
@@ -71,7 +71,7 @@ class RestaurantBillGenerator(HTMLBillGenerator):
             <style>
                 @page {{
                     margin: 0;
-                    size: 80mm auto;
+                    size: 72mm auto;
                 }}
                 
                 * {{
@@ -82,127 +82,147 @@ class RestaurantBillGenerator(HTMLBillGenerator):
                 
                 body {{
                     font-family: 'Courier New', monospace;
-                    font-size: 11px;
-                    line-height: 1.2;
-                    width: 80mm;
+                    font-size: 12px;
+                    font-weight: bold;
+                    line-height: 1.3;
+                    width: 72mm;
                     margin: 0;
-                    padding: 5mm;
+                    padding: 3mm;
                     background: white;
                     color: black;
+                    -webkit-print-color-adjust: exact;
                 }}
                 
                 .header {{
                     text-align: center;
-                    border-bottom: 1px solid #000;
-                    padding-bottom: 8px;
-                    margin-bottom: 8px;
+                    border-bottom: 2px solid #000;
+                    padding-bottom: 6px;
+                    margin-bottom: 6px;
                 }}
                 
                 .logo {{
-                    font-size: 20px;
-                    margin: 5px 0;
-                    font-weight: bold;
+                    font-size: 16px;
+                    margin: 3px 0;
+                    font-weight: 900;
+                    letter-spacing: 1px;
                 }}
                 
                 .restaurant-name {{
-                    font-size: 14px;
-                    font-weight: bold;
-                    margin: 5px 0;
+                    font-size: 13px;
+                    font-weight: 900;
+                    margin: 4px 0;
                     text-transform: uppercase;
+                    letter-spacing: 0.5px;
                 }}
                 
                 .address {{
-                    font-size: 9px;
-                    margin: 2px 0;
-                    line-height: 1.1;
+                    font-size: 8px;
+                    margin: 1px 0;
+                    line-height: 1.2;
+                    font-weight: bold;
                 }}
                 
                 .halal {{
-                    font-size: 8px;
-                    margin: 2px 0;
+                    font-size: 7px;
+                    margin: 1px 0;
+                    font-weight: bold;
                 }}
                 
                 .invoice-details {{
-                    margin: 8px 0;
-                    border-bottom: 1px solid #000;
-                    padding-bottom: 8px;
+                    margin: 6px 0;
+                    border-bottom: 2px solid #000;
+                    padding-bottom: 6px;
                 }}
                 
                 .invoice-title {{
                     text-align: center;
-                    font-weight: bold;
-                    font-size: 12px;
-                    margin-bottom: 5px;
+                    font-weight: 900;
+                    font-size: 11px;
+                    margin-bottom: 4px;
+                    letter-spacing: 1px;
                 }}
                 
                 .detail-row {{
                     display: flex;
                     justify-content: space-between;
                     margin: 2px 0;
-                    font-size: 10px;
+                    font-size: 9px;
+                    font-weight: bold;
                 }}
                 
                 .items-table {{
                     width: 100%;
                     border-collapse: collapse;
-                    margin: 8px 0;
-                    font-size: 10px;
+                    margin: 6px 0;
+                    font-size: 9px;
                 }}
                 
                 .items-table th {{
                     text-align: left;
-                    padding: 3px 0;
-                    border-bottom: 1px solid #000;
-                    font-weight: bold;
-                    font-size: 10px;
+                    padding: 2px 0;
+                    border-bottom: 2px solid #000;
+                    font-weight: 900;
+                    font-size: 9px;
+                    background: #000;
+                    color: white;
                 }}
                 
                 .items-table td {{
                     padding: 2px 0;
-                    border-bottom: 1px dotted #ccc;
-                    font-size: 9px;
+                    border-bottom: 1px solid #333;
+                    font-size: 8px;
+                    font-weight: bold;
                 }}
                 
                 .totals {{
-                    margin-top: 8px;
-                    border-top: 1px solid #000;
-                    padding-top: 5px;
+                    margin-top: 6px;
+                    border-top: 2px solid #000;
+                    padding-top: 4px;
                 }}
                 
                 .total-row {{
                     display: flex;
                     justify-content: space-between;
                     margin: 2px 0;
-                    font-size: 10px;
+                    font-size: 9px;
+                    font-weight: bold;
                 }}
                 
                 .total-row.final {{
-                    font-weight: bold;
-                    font-size: 12px;
-                    border-top: 1px solid #000;
-                    padding-top: 3px;
+                    font-weight: 900;
+                    font-size: 11px;
+                    border-top: 2px solid #000;
+                    padding-top: 2px;
                     margin-top: 3px;
+                    background: #000;
+                    color: white;
+                    padding: 3px 0;
                 }}
                 
                 .footer {{
                     text-align: center;
-                    margin-top: 10px;
-                    border-top: 1px solid #000;
-                    padding-top: 5px;
-                    font-size: 9px;
+                    margin-top: 8px;
+                    border-top: 2px solid #000;
+                    padding-top: 4px;
+                    font-size: 8px;
+                    font-weight: bold;
                 }}
                 
                 .tax-breakdown {{
-                    margin: 5px 0;
-                    font-size: 9px;
+                    margin: 4px 0;
+                    font-size: 8px;
+                    font-weight: bold;
+                    text-align: center;
                 }}
                 
-                /* Print-specific styles */
+                /* Print-specific styles for 231 DPI */
                 @media print {{
                     body {{
-                        width: 80mm;
+                        width: 72mm;
                         margin: 0;
                         padding: 2mm;
+                        font-size: 12px;
+                        font-weight: 900;
                     }}
                     
                     .no-print {{
@@ -211,10 +231,33 @@ class RestaurantBillGenerator(HTMLBillGenerator):
                     
                     .header {{
                         page-break-inside: avoid;
+                        border-bottom: 3px solid #000;
                     }}
                     
                     .items-table {{
                         page-break-inside: avoid;
+                    }}
+                    
+                    .items-table th {{
+                        background: #000 !important;
+                        color: white !important;
+                        font-weight: 900 !important;
+                        border-bottom: 3px solid #000 !important;
+                    }}
+                    
+                    .total-row.final {{
+                        background: #000 !important;
+                        color: white !important;
+                        font-weight: 900 !important;
+                    }}
+                    
+                    /* Ensure bold text prints properly */
+                    * {{
+                        font-weight: bold !important;
+                    }}
+                    
+                    .logo, .restaurant-name, .invoice-title, .total-row.final {{
+                        font-weight: 900 !important;
                     }}
                 }}
                 
@@ -260,10 +303,10 @@ class RestaurantBillGenerator(HTMLBillGenerator):
             <table class="items-table">
                 <thead>
                     <tr>
-                        <th style="width: 45%;">Item</th>
-                        <th style="width: 15%; text-align: center;">Qty</th>
-                        <th style="width: 20%; text-align: right;">Rate</th>
-                        <th style="width: 20%; text-align: right;">Amount</th>
+                        <th style="width: 45%;">ITEM</th>
+                        <th style="width: 15%; text-align: center;">QTY</th>
+                        <th style="width: 20%; text-align: right;">RATE</th>
+                        <th style="width: 20%; text-align: right;">AMT</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -273,7 +316,7 @@ class RestaurantBillGenerator(HTMLBillGenerator):
             
             <div class="totals">
                 <div class="total-row">
-                    <span>Subtotal</span>
+                    <span>SUBTOTAL</span>
                     <span>₹{subtotal:.2f}</span>
                 </div>
                 {"<div class='total-row'><span>GST @" + str(int(tax_rate*100)) + "%</span><span>₹" + f"{tax_amount:.2f}" + "</span></div>" if tax_rate > 0 else ""}
@@ -286,15 +329,15 @@ class RestaurantBillGenerator(HTMLBillGenerator):
             {"<div class='tax-breakdown'>GST@" + str(int(tax_rate*100)) + "% - Taxable: ₹" + f"{subtotal:.2f}" + " | Tax: ₹" + f"{tax_amount:.2f}" + "</div>" if tax_rate > 0 else ""}
             
             <div class="footer">
-                <p>Thank you for your visit!</p>
-                <p>Please come again</p>
+                <p>THANK YOU FOR YOUR VISIT!</p>
+                <p>PLEASE COME AGAIN</p>
             </div>
             
             <div class="no-print" style="text-align: center; margin-top: 15px; background: #f5f5f5; padding: 10px; border-radius: 5px;">
-                <button onclick="window.print()" style="padding: 8px 16px; font-size: 14px; background: #007cba; color: white; border: none; border-radius: 3px; cursor: pointer; margin-right: 10px;">Print Bill</button>
-                <button onclick="window.close()" style="padding: 8px 16px; font-size: 14px; background: #666; color: white; border: none; border-radius: 3px; cursor: pointer;">Close</button>
-                <div style="margin-top: 8px; font-size: 11px; color: #666;">
-                    Optimized for 80mm thermal printer
+                <button onclick="window.print()" style="padding: 8px 16px; font-size: 14px; background: #007cba; color: white; border: none; border-radius: 3px; cursor: pointer; margin-right: 10px; font-weight: bold;">Print Bill</button>
+                <button onclick="window.close()" style="padding: 8px 16px; font-size: 14px; background: #666; color: white; border: none; border-radius: 3px; cursor: pointer; font-weight: bold;">Close</button>
+                <div style="margin-top: 8px; font-size: 11px; color: #666; font-weight: bold;">
+                    Optimized for 72mm x 400mm thermal printer (231 DPI)
                 </div>
             </div>
         </body>
