@@ -1,0 +1,52 @@
+# Node
+frontend/node_modules
+frontend/build
+frontend/.env
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+
+# Python
+backend/__pycache__
+backend/*.pyc
+backend/*.pyo
+backend/*.pyd
+backend/.Python
+backend/venv
+backend/env
+backend/ENV
+backend/*.egg-info
+backend/dist
+backend/build
+
+# Database (will be created fresh or mounted)
+backend/instance/*.db
+backend/instance/*.db-journal
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+
+# Documentation
+*.md
+!README.md
+
+# Other
+.env
+*.log
+

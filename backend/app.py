@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify, send_file, send_from_directory
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timezone, timedelta
@@ -20,10 +20,14 @@ def get_ist_time():
     ist_time = utc_now + ist_offset
     return ist_time
 
-app = Flask(__name__)
+# Get the directory of the current file
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+STATIC_FOLDER = os.path.join(BASE_DIR, '..', 'frontend', 'build')
+
+app = Flask(__name__, static_folder=STATIC_FOLDER, static_url_path='')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///restaurant.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SECRET_KEY'] = 'your-secret-key-here'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-here-change-in-production')
 
 db = SQLAlchemy(app)
 CORS(app)
@@ -83,6 +87,20 @@ class Bill(db.Model):
     payment_method = db.Column(db.String(20), default='cash')
     bill_date = db.Column(db.DateTime, default=get_ist_time)
     created_at = db.Column(db.DateTime, default=get_ist_time)
+
+# Serve React App
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve(path):
+    # If path doesn't start with /api/, serve the React app
+    if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
+        return send_from_directory(app.static_folder, path)
+    elif path.startswith('api/'):
+        # Let Flask handle API routes
+        return jsonify({'error': 'API endpoint not found'}), 404
+    else:
+        # Serve index.html for React Router
+        return send_from_directory(app.static_folder, 'index.html')
 
 # API Routes
 @app.route('/api/health', methods=['GET'])

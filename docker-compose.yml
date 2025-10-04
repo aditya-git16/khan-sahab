@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  khan-sahab-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: khan-sahab-restaurant
+    restart: unless-stopped
+    ports:
+      - "5001:5001"
+    volumes:
+      # Persist database across container restarts
+      - khan-sahab-data:/app/backend/instance
+    environment:
+      - FLASK_ENV=production
+      - PYTHONUNBUFFERED=1
+      - PORT=5001
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5001/api/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - khan-sahab-network
+
+volumes:
+  khan-sahab-data:
+    driver: local
+
+networks:
+  khan-sahab-network:
+    driver: bridge
+
