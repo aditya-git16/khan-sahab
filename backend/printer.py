@@ -87,8 +87,7 @@ class RestaurantBillGenerator(HTMLBillGenerator):
                     line-height: 1.4;
                     width: 67mm;
                     margin: 0;
-                    margin-left: 5mm;
-                    padding: 2mm 3mm 2mm 3mm;
+                    padding: 2mm 8mm 2mm 3mm;
                     background: white;
                     color: black;
                     -webkit-print-color-adjust: exact;
@@ -224,8 +223,7 @@ class RestaurantBillGenerator(HTMLBillGenerator):
                     body {{
                         width: 67mm;
                         margin: 0;
-                        margin-left: 5mm;
-                        padding: 2mm 3mm 2mm 3mm;
+                        padding: 2mm 8mm 2mm 3mm;
                         font-size: 14px;
                         font-weight: 600;
                     }}
