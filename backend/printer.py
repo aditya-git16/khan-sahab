@@ -85,8 +85,9 @@ class RestaurantBillGenerator(HTMLBillGenerator):
                     font-size: 14px;
                     font-weight: 600;
                     line-height: 1.4;
-                    width: 72mm;
+                    width: 67mm;
                     margin: 0;
+                    margin-left: 5mm;
                     padding: 2mm 3mm 2mm 3mm;
                     background: white;
                     color: black;
@@ -221,8 +222,9 @@ class RestaurantBillGenerator(HTMLBillGenerator):
                 /* Print-specific styles for 231 DPI */
                 @media print {{
                     body {{
-                        width: 72mm;
+                        width: 67mm;
                         margin: 0;
+                        margin-left: 5mm;
                         padding: 2mm 3mm 2mm 3mm;
                         font-size: 14px;
                         font-weight: 600;
