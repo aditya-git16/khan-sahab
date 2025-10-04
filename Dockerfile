@@ -59,41 +59,37 @@ ENV PORT=5001
 EXPOSE 5001
 
 # Create a startup script
-COPY <<EOF /app/start.sh
-#!/bin/bash
-set -e
-
-echo "Starting Khan Sahab Restaurant Application..."
-cd /app/backend
-
-# Initialize database if it doesn't exist
-python -c "
-from app import app, db
-import os
-
-with app.app_context():
-    db_path = os.path.join(app.instance_path, 'restaurant.db')
-    if not os.path.exists(db_path):
-        print('Initializing database...')
-        from app import init_db
-        init_db()
-        print('Database initialized successfully!')
-    else:
-        print('Database already exists, skipping initialization.')
-"
-
-echo "Starting Gunicorn server..."
-exec gunicorn --bind 0.0.0.0:5001 \
-         --workers 4 \
-         --threads 2 \
-         --timeout 120 \
-         --access-logfile - \
-         --error-logfile - \
-         --log-level info \
-         app:app
-EOF
-
-RUN chmod +x /app/start.sh
+RUN printf '#!/bin/bash\n\
+set -e\n\
+\n\
+echo "Starting Khan Sahab Restaurant Application..."\n\
+cd /app/backend\n\
+\n\
+# Initialize database if it does not exist\n\
+python -c "\n\
+from app import app, db\n\
+import os\n\
+\n\
+with app.app_context():\n\
+    db_path = os.path.join(app.instance_path, '"'"'restaurant.db'"'"')\n\
+    if not os.path.exists(db_path):\n\
+        print('"'"'Initializing database...'"'"')\n\
+        from app import init_db\n\
+        init_db()\n\
+        print('"'"'Database initialized successfully!'"'"')\n\
+    else:\n\
+        print('"'"'Database already exists, skipping initialization.'"'"')\n\
+"\n\
+\n\
+echo "Starting Gunicorn server..."\n\
+exec gunicorn --bind 0.0.0.0:5001 \\\n\
+         --workers 4 \\\n\
+         --threads 2 \\\n\
+         --timeout 120 \\\n\
+         --access-logfile - \\\n\
+         --error-logfile - \\\n\
+         --log-level info \\\n\
+         app:app\n' > /app/start.sh && chmod +x /app/start.sh
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
