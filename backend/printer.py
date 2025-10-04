@@ -55,10 +55,10 @@ class RestaurantBillGenerator(HTMLBillGenerator):
             amount = qty * price
             items_html += f"""
             <tr>
-                <td style="padding: 2px 0; border-bottom: 1px solid #333; font-weight: bold;">{item['name']}</td>
-                <td style="padding: 2px 0; border-bottom: 1px solid #333; text-align: center; font-weight: bold;">{qty}</td>
-                <td style="padding: 2px 0; border-bottom: 1px solid #333; text-align: right; font-weight: bold;">₹{price:.2f}</td>
-                <td style="padding: 2px 0; border-bottom: 1px solid #333; text-align: right; font-weight: bold;">₹{amount:.2f}</td>
+                <td style="padding: 3px 0; border-bottom: 1px solid #333; font-weight: 900; font-size: 11px;">{item['name']}</td>
+                <td style="padding: 3px 0; border-bottom: 1px solid #333; text-align: center; font-weight: 900; font-size: 11px;">{qty}</td>
+                <td style="padding: 3px 0; border-bottom: 1px solid #333; text-align: right; font-weight: 900; font-size: 11px;">₹{price:.2f}</td>
+                <td style="padding: 3px 0; border-bottom: 1px solid #333; text-align: right; font-weight: 900; font-size: 11px;">₹{amount:.2f}</td>
             </tr>
             """
         
@@ -81,10 +81,10 @@ class RestaurantBillGenerator(HTMLBillGenerator):
                 }}
                 
                 body {{
-                    font-family: 'Courier New', monospace;
-                    font-size: 12px;
-                    font-weight: bold;
-                    line-height: 1.3;
+                    font-family: 'Arial Black', 'Arial', sans-serif;
+                    font-size: 14px;
+                    font-weight: 900;
+                    line-height: 1.4;
                     width: 72mm;
                     margin: 0;
                     padding: 3mm;
@@ -101,31 +101,31 @@ class RestaurantBillGenerator(HTMLBillGenerator):
                 }}
                 
                 .logo {{
-                    font-size: 16px;
-                    margin: 3px 0;
+                    font-size: 20px;
+                    margin: 4px 0;
                     font-weight: 900;
-                    letter-spacing: 1px;
+                    letter-spacing: 2px;
                 }}
                 
                 .restaurant-name {{
-                    font-size: 13px;
+                    font-size: 16px;
                     font-weight: 900;
-                    margin: 4px 0;
+                    margin: 5px 0;
                     text-transform: uppercase;
-                    letter-spacing: 0.5px;
+                    letter-spacing: 1px;
                 }}
                 
                 .address {{
-                    font-size: 8px;
-                    margin: 1px 0;
-                    line-height: 1.2;
-                    font-weight: bold;
+                    font-size: 11px;
+                    margin: 2px 0;
+                    line-height: 1.3;
+                    font-weight: 900;
                 }}
                 
                 .halal {{
-                    font-size: 7px;
-                    margin: 1px 0;
-                    font-weight: bold;
+                    font-size: 10px;
+                    margin: 2px 0;
+                    font-weight: 900;
                 }}
                 
                 .invoice-details {{
@@ -137,41 +137,41 @@ class RestaurantBillGenerator(HTMLBillGenerator):
                 .invoice-title {{
                     text-align: center;
                     font-weight: 900;
-                    font-size: 11px;
-                    margin-bottom: 4px;
-                    letter-spacing: 1px;
+                    font-size: 14px;
+                    margin-bottom: 5px;
+                    letter-spacing: 2px;
                 }}
                 
                 .detail-row {{
                     display: flex;
                     justify-content: space-between;
-                    margin: 2px 0;
-                    font-size: 9px;
-                    font-weight: bold;
+                    margin: 3px 0;
+                    font-size: 12px;
+                    font-weight: 900;
                 }}
                 
                 .items-table {{
                     width: 100%;
                     border-collapse: collapse;
                     margin: 6px 0;
-                    font-size: 9px;
+                    font-size: 12px;
                 }}
                 
                 .items-table th {{
                     text-align: left;
-                    padding: 2px 0;
-                    border-bottom: 2px solid #000;
+                    padding: 3px 0;
+                    border-bottom: 3px solid #000;
                     font-weight: 900;
-                    font-size: 9px;
+                    font-size: 12px;
                     background: #000;
                     color: white;
                 }}
                 
                 .items-table td {{
-                    padding: 2px 0;
+                    padding: 3px 0;
                     border-bottom: 1px solid #333;
-                    font-size: 8px;
-                    font-weight: bold;
+                    font-size: 11px;
+                    font-weight: 900;
                 }}
                 
                 .totals {{
@@ -183,20 +183,20 @@ class RestaurantBillGenerator(HTMLBillGenerator):
                 .total-row {{
                     display: flex;
                     justify-content: space-between;
-                    margin: 2px 0;
-                    font-size: 9px;
-                    font-weight: bold;
+                    margin: 3px 0;
+                    font-size: 12px;
+                    font-weight: 900;
                 }}
                 
                 .total-row.final {{
                     font-weight: 900;
-                    font-size: 11px;
-                    border-top: 2px solid #000;
-                    padding-top: 2px;
-                    margin-top: 3px;
+                    font-size: 15px;
+                    border-top: 3px solid #000;
+                    padding-top: 3px;
+                    margin-top: 4px;
                     background: #000;
                     color: white;
-                    padding: 3px 0;
+                    padding: 4px 0;
                 }}
                 
                 .footer {{
@@ -204,14 +204,14 @@ class RestaurantBillGenerator(HTMLBillGenerator):
                     margin-top: 8px;
                     border-top: 2px solid #000;
                     padding-top: 4px;
-                    font-size: 8px;
-                    font-weight: bold;
+                    font-size: 11px;
+                    font-weight: 900;
                 }}
                 
                 .tax-breakdown {{
                     margin: 4px 0;
-                    font-size: 8px;
-                    font-weight: bold;
+                    font-size: 11px;
+                    font-weight: 900;
                     text-align: center;
                 }}
                 
@@ -221,7 +221,7 @@ class RestaurantBillGenerator(HTMLBillGenerator):
                         width: 72mm;
                         margin: 0;
                         padding: 2mm;
-                        font-size: 12px;
+                        font-size: 14px;
                         font-weight: 900;
                     }}
                     
