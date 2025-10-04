@@ -55,10 +55,10 @@ class RestaurantBillGenerator(HTMLBillGenerator):
             amount = qty * price
             items_html += f"""
             <tr>
-                <td style="padding: 3px 2px; border-bottom: 1px solid #ddd; font-weight: 600; font-size: 11px;">{item['name']}</td>
-                <td style="padding: 3px 2px; border-bottom: 1px solid #ddd; text-align: center; font-weight: 600; font-size: 11px;">{qty}</td>
-                <td style="padding: 3px 2px; border-bottom: 1px solid #ddd; text-align: right; font-weight: 600; font-size: 11px;">₹{price:.2f}</td>
-                <td style="padding: 3px 2px; border-bottom: 1px solid #ddd; text-align: right; font-weight: 600; font-size: 11px;">₹{amount:.2f}</td>
+                <td style="padding: 3px 1px 3px 2px; border-bottom: 1px solid #ddd; font-weight: 600; font-size: 10px;">{item['name']}</td>
+                <td style="padding: 3px 1px 3px 2px; border-bottom: 1px solid #ddd; text-align: center; font-weight: 600; font-size: 10px;">{qty}</td>
+                <td style="padding: 3px 1px 3px 2px; border-bottom: 1px solid #ddd; text-align: right; font-weight: 600; font-size: 10px;">₹{price:.2f}</td>
+                <td style="padding: 3px 1px 3px 2px; border-bottom: 1px solid #ddd; text-align: right; font-weight: 600; font-size: 10px;">₹{amount:.2f}</td>
             </tr>
             """
         
@@ -87,7 +87,7 @@ class RestaurantBillGenerator(HTMLBillGenerator):
                     line-height: 1.4;
                     width: 72mm;
                     margin: 0;
-                    padding: 2mm 2mm 2mm 3mm;
+                    padding: 2mm 3mm 2mm 3mm;
                     background: white;
                     color: black;
                     -webkit-print-color-adjust: exact;
@@ -155,24 +155,26 @@ class RestaurantBillGenerator(HTMLBillGenerator):
                     border-collapse: collapse;
                     margin: 6px 0;
                     font-size: 12px;
+                    table-layout: fixed;
                 }}
                 
                 .items-table th {{
                     text-align: left;
-                    padding: 4px 2px;
+                    padding: 4px 1px 4px 2px;
                     border-bottom: 2px solid #000;
                     border-top: 2px solid #000;
                     font-weight: 700;
-                    font-size: 11px;
+                    font-size: 10px;
                     background: transparent;
                     color: #000;
                 }}
                 
                 .items-table td {{
-                    padding: 3px 2px;
+                    padding: 3px 1px 3px 2px;
                     border-bottom: 1px solid #ddd;
-                    font-size: 11px;
+                    font-size: 10px;
                     font-weight: 600;
+                    word-wrap: break-word;
                 }}
                 
                 .totals {{
@@ -221,7 +223,7 @@ class RestaurantBillGenerator(HTMLBillGenerator):
                     body {{
                         width: 72mm;
                         margin: 0;
-                        padding: 2mm 1mm 2mm 2mm;
+                        padding: 2mm 3mm 2mm 3mm;
                         font-size: 14px;
                         font-weight: 600;
                     }}
@@ -245,11 +247,13 @@ class RestaurantBillGenerator(HTMLBillGenerator):
                         font-weight: 700 !important;
                         border-top: 2px solid #000 !important;
                         border-bottom: 2px solid #000 !important;
-                        padding: 4px 2px !important;
+                        padding: 4px 1px 4px 2px !important;
+                        font-size: 10px !important;
                     }}
                     
                     .items-table td {{
-                        padding: 3px 2px !important;
+                        padding: 3px 1px 3px 2px !important;
+                        font-size: 10px !important;
                     }}
                     
                     .total-row.final {{
@@ -307,10 +311,10 @@ class RestaurantBillGenerator(HTMLBillGenerator):
             <table class="items-table">
                 <thead>
                     <tr>
-                        <th style="width: 42%; padding-left: 2px;">ITEM</th>
-                        <th style="width: 13%; text-align: center;">QTY</th>
-                        <th style="width: 22%; text-align: right;">RATE</th>
-                        <th style="width: 23%; text-align: right; padding-right: 2px;">AMT</th>
+                        <th style="width: 40%; padding-left: 2px;">ITEM</th>
+                        <th style="width: 12%; text-align: center;">QTY</th>
+                        <th style="width: 24%; text-align: right;">RATE</th>
+                        <th style="width: 24%; text-align: right;">AMT</th>
                     </tr>
                 </thead>
                 <tbody>
