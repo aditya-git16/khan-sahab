@@ -25,7 +25,7 @@ function MainPage() {
   const [itemToDelete, setItemToDelete] = useState(null);
 
   const navigate = useNavigate();
-  const API_BASE = 'http://localhost:5001/api';
+  const API_BASE = process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:5001/api';
 
   useEffect(() => {
     fetchData();

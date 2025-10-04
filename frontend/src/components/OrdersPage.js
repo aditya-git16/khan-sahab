@@ -12,7 +12,7 @@ function OrdersPage() {
   const [timeFilter, setTimeFilter] = useState('1day');
   const [dishSearchTerm, setDishSearchTerm] = useState('');
 
-  const API_BASE = 'http://localhost:5001/api';
+  const API_BASE = process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:5001/api';
 
   const fetchOrders = useCallback(async () => {
     try {
