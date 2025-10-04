@@ -21,6 +21,8 @@ function MainPage() {
   const [timeFilter, setTimeFilter] = useState('1day');
   const [dishSearchTerm, setDishSearchTerm] = useState('');
   const [bills, setBills] = useState([]);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
 
   const navigate = useNavigate();
   const API_BASE = 'http://localhost:5001/api';
@@ -76,6 +78,23 @@ function MainPage() {
       alert('Failed to add menu item. Please try again.');
       console.error('Error adding menu item:', err);
     }
+  };
+
+  const deleteMenuItem = async (itemId) => {
+    try {
+      await axios.delete(`${API_BASE}/menu/${itemId}`);
+      setShowDeleteConfirm(false);
+      setItemToDelete(null);
+      fetchData();
+    } catch (err) {
+      alert('Failed to delete menu item. Please try again.');
+      console.error('Error deleting menu item:', err);
+    }
+  };
+
+  const handleDeleteClick = (item) => {
+    setItemToDelete(item);
+    setShowDeleteConfirm(true);
   };
 
   const handleTabChange = (tab) => {
@@ -527,6 +546,31 @@ function MainPage() {
             </div>
           )}
 
+          {/* Delete Confirmation Modal */}
+          {showDeleteConfirm && itemToDelete && (
+            <div className="modal-overlay">
+              <div className="modal">
+                <h3>Confirm Delete</h3>
+                <p>Are you sure you want to delete <strong>"{itemToDelete.name}"</strong> from the menu?</p>
+                <p className="warning-text">This action cannot be undone.</p>
+                <div className="modal-buttons">
+                  <button className="button" onClick={() => {
+                    setShowDeleteConfirm(false);
+                    setItemToDelete(null);
+                  }}>
+                    Cancel
+                  </button>
+                  <button 
+                    className="button danger" 
+                    onClick={() => deleteMenuItem(itemToDelete.id)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="menu-categories">
             <button 
               className={`category-btn ${menuSelectedCategory === 'all' ? 'active' : ''}`}
@@ -573,7 +617,16 @@ function MainPage() {
               })
               .map(item => (
                 <div key={item.id} className="card">
-                  <h3>{item.name}</h3>
+                  <div className="card-header">
+                    <h3>{item.name}</h3>
+                    <button 
+                      className="delete-btn"
+                      onClick={() => handleDeleteClick(item)}
+                      title="Delete item"
+                    >
+                      ×
+                    </button>
+                  </div>
                   <p>{item.description}</p>
                   <p><strong>Category:</strong> {item.category}</p>
                   <div className="price">₹{item.price.toFixed(2)}</div>

@@ -123,6 +123,13 @@ def add_menu_item():
     db.session.commit()
     return jsonify({'message': 'Menu item added successfully', 'id': new_item.id}), 201
 
+@app.route('/api/menu/<int:item_id>', methods=['DELETE'])
+def delete_menu_item(item_id):
+    item = MenuItem.query.get_or_404(item_id)
+    db.session.delete(item)
+    db.session.commit()
+    return jsonify({'message': 'Menu item deleted successfully'}), 200
+
 # Table endpoints
 @app.route('/api/tables', methods=['GET'])
 def get_tables():

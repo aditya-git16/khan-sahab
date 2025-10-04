@@ -1344,4 +1344,54 @@ body {
   .summary-stats {
     grid-template-columns: 1fr;
   }
+}
+
+/* Delete Button Styles */
+.delete-btn {
+  background: #dc3545;
+  color: white;
+  border: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1.2rem;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  opacity: 0;
+  transform: scale(0.8);
+}
+
+.card:hover .delete-btn {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.delete-btn:hover {
+  background: #c82333;
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+}
+
+.card-header {
+  position: relative;
+}
+
+.card-header h3 {
+  margin-right: 40px;
+  padding-right: 10px;
+}
+
+/* Warning Text */
+.warning-text {
+  color: #dc3545;
+  font-weight: 500;
+  font-size: 0.9rem;
+  margin-top: 10px;
 } 
