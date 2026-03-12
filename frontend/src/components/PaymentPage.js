@@ -25,7 +25,7 @@ function PaymentPage() {
     } finally {
       setLoading(false);
     }
-  }, [orderId]);
+  }, [orderId, API_BASE]);
 
   useEffect(() => {
     fetchOrder();

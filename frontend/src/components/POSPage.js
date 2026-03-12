@@ -13,22 +13,19 @@ function POSPage() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [menuCategories, setMenuCategories] = useState([]);
 
   const API_BASE = process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:5001/api';
 
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      const [menuRes, tablesRes, ordersRes, categoriesRes] = await Promise.all([
+      const [menuRes, tablesRes, ordersRes] = await Promise.all([
         axios.get(`${API_BASE}/menu`),
         axios.get(`${API_BASE}/tables`),
-        axios.get(`${API_BASE}/orders`),
-        axios.get(`${API_BASE}/menu/categories`)
+        axios.get(`${API_BASE}/orders`)
       ]);
       
       setMenu(menuRes.data);
-      setMenuCategories(categoriesRes.data);
       const currentTable = tablesRes.data.find(t => t.id === parseInt(tableId));
       setTable(currentTable);
       
@@ -63,7 +60,7 @@ function POSPage() {
     } finally {
       setLoading(false);
     }
-  }, [tableId]);
+  }, [tableId, API_BASE]);
 
   useEffect(() => {
     fetchData();
@@ -120,7 +117,7 @@ function POSPage() {
         fetchData();
       } else {
         // Create new order
-        const response = await axios.post(`${API_BASE}/orders`, orderData);
+        await axios.post(`${API_BASE}/orders`, orderData);
         // Refresh the data to show the new order in cart
         fetchData();
       }

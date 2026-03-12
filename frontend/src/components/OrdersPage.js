@@ -28,7 +28,7 @@ function OrdersPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [API_BASE]);
 
   useEffect(() => {
     fetchOrders();
@@ -40,21 +40,6 @@ function OrdersPage() {
 
   const goBack = () => {
     navigate('/');
-  };
-
-  // Helper function to format date in Indian Standard Time
-  const formatDateIST = (dateString) => {
-    const date = new Date(dateString);
-    // The date from backend is already in IST, just format it properly
-    return date.toLocaleString('en-IN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false
-    });
   };
 
   // Helper function to get time filter date

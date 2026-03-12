@@ -23,19 +23,22 @@ function MainPage() {
   const [bills, setBills] = useState([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
+  const [editingItem, setEditingItem] = useState(null);
+  const [editForm, setEditForm] = useState({ name: '', description: '', price: '', category: '' });
 
   const navigate = useNavigate();
   const API_BASE = process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:5001/api';
 
   useEffect(() => {
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchData = async () => {
     try {
       setLoading(true);
       const [menuRes, tablesRes, ordersRes, categoriesRes, billsRes] = await Promise.all([
-        axios.get(`${API_BASE}/menu`),
+        axios.get(`${API_BASE}/menu/all`),
         axios.get(`${API_BASE}/tables`),
         axios.get(`${API_BASE}/orders`),
         axios.get(`${API_BASE}/menu/categories`),
@@ -95,6 +98,28 @@ function MainPage() {
   const handleDeleteClick = (item) => {
     setItemToDelete(item);
     setShowDeleteConfirm(true);
+  };
+
+  const handleEditClick = (item) => {
+    setEditingItem(item);
+    setEditForm({
+      name: item.name,
+      description: item.description,
+      price: item.price,
+      category: item.category
+    });
+  };
+
+  const updateMenuItem = async () => {
+    try {
+      await axios.put(`${API_BASE}/menu/${editingItem.id}`, editForm);
+      setEditingItem(null);
+      setEditForm({ name: '', description: '', price: '', category: '' });
+      fetchData();
+    } catch (err) {
+      alert('Failed to update menu item. Please try again.');
+      console.error('Error updating menu item:', err);
+    }
   };
 
   const handleTabChange = (tab) => {
@@ -184,9 +209,6 @@ function MainPage() {
 
   const exportBillsCSV = () => {
     const filteredBills = getFilteredBills();
-    const ordersWithItems = orders.filter(order => 
-      filteredBills.some(bill => bill.order_id === order.id)
-    );
 
     // Create CSV content
     let csvContent = 'Invoice Number,Order ID,Date,Time,Subtotal,Tax Rate,Tax Amount,Total,Payment Method,Items\n';
@@ -546,6 +568,68 @@ function MainPage() {
             </div>
           )}
 
+          {/* Edit Menu Item Modal */}
+          {editingItem && (
+            <div className="modal-overlay">
+              <div className="modal">
+                <h3>Edit Menu Item</h3>
+                <div className="form-group">
+                  <label>Name:</label>
+                  <input
+                    type="text"
+                    value={editForm.name}
+                    onChange={(e) => setEditForm({...editForm, name: e.target.value})}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Description:</label>
+                  <textarea
+                    value={editForm.description}
+                    onChange={(e) => setEditForm({...editForm, description: e.target.value})}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Price (Rs.):</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={editForm.price}
+                    onChange={(e) => setEditForm({...editForm, price: parseFloat(e.target.value)})}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Category:</label>
+                  <select
+                    value={editForm.category}
+                    onChange={(e) => setEditForm({...editForm, category: e.target.value})}
+                  >
+                    <option value="">Select Category</option>
+                    <option value="Beverages">Beverages</option>
+                    <option value="Veg Starters">Veg Starters</option>
+                    <option value="Non-Veg Starters">Non-Veg Starters</option>
+                    <option value="Khan Sahab Spl. Mutton">Khan Sahab Spl. Mutton</option>
+                    <option value="Khan Sahab Spl. Chicken">Khan Sahab Spl. Chicken</option>
+                    <option value="Khan Sahab Spl. Chinese">Khan Sahab Spl. Chinese</option>
+                    <option value="Soups">Soups</option>
+                    <option value="Khan Sahab Veg Special">Khan Sahab Veg Special</option>
+                    <option value="Rice & Biryani">Rice & Biryani</option>
+                    <option value="Indian Breads">Indian Breads</option>
+                    <option value="Dessert">Dessert</option>
+                    <option value="Salad / Papad">Salad / Papad</option>
+                  </select>
+                </div>
+                <div className="modal-buttons">
+                  <button className="button" onClick={() => setEditingItem(null)}>
+                    Cancel
+                  </button>
+                  <button className="button success" onClick={updateMenuItem}>
+                    Save Changes
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Delete Confirmation Modal */}
           {showDeleteConfirm && itemToDelete && (
             <div className="modal-overlay">
@@ -616,19 +700,30 @@ function MainPage() {
                 return searchMatch && categoryMatch;
               })
               .map(item => (
-                <div key={item.id} className="card">
+                <div key={item.id} className={`card${item.available === false ? ' unavailable' : ''}`}>
                   <div className="card-header">
                     <h3>{item.name}</h3>
-                    <button 
-                      className="delete-btn"
-                      onClick={() => handleDeleteClick(item)}
-                      title="Delete item"
-                    >
-                      ×
-                    </button>
+                    <div>
+                      <button
+                        className="edit-btn"
+                        onClick={() => handleEditClick(item)}
+                        title="Edit item"
+                        style={{ marginRight: '5px', background: '#2196F3', color: 'white', border: 'none', borderRadius: '4px', padding: '2px 8px', cursor: 'pointer' }}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        className="delete-btn"
+                        onClick={() => handleDeleteClick(item)}
+                        title="Delete item"
+                      >
+                        ×
+                      </button>
+                    </div>
                   </div>
                   <p>{item.description}</p>
                   <p><strong>Category:</strong> {item.category}</p>
+                  {item.available === false && <p style={{ color: 'red' }}><strong>Unavailable</strong></p>}
                   <div className="price">₹{item.price.toFixed(2)}</div>
                 </div>
               ))}

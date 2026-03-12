@@ -5,7 +5,7 @@ from datetime import datetime, timezone, timedelta
 import os
 from printer import print_bill
 from reportlab.lib.pagesizes import letter, A4
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, BaseDocTemplate
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table as ReportLabTable, TableStyle, BaseDocTemplate
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.lib import colors
@@ -123,6 +123,19 @@ def get_menu():
         'category': item.category
     } for item in menu_items])
 
+@app.route('/api/menu/all', methods=['GET'])
+def get_all_menu():
+    """Return all menu items including unavailable ones (for admin management)."""
+    menu_items = MenuItem.query.all()
+    return jsonify([{
+        'id': item.id,
+        'name': item.name,
+        'description': item.description,
+        'price': item.price,
+        'category': item.category,
+        'available': item.available
+    } for item in menu_items])
+
 @app.route('/api/menu/categories', methods=['GET'])
 def get_menu_categories():
     categories = db.session.query(MenuItem.category).filter_by(available=True).distinct().all()
@@ -141,9 +154,33 @@ def add_menu_item():
     db.session.commit()
     return jsonify({'message': 'Menu item added successfully', 'id': new_item.id}), 201
 
+@app.route('/api/menu/<int:item_id>', methods=['PUT'])
+def update_menu_item(item_id):
+    item = MenuItem.query.get_or_404(item_id)
+    data = request.get_json()
+    if 'name' in data:
+        item.name = data['name']
+    if 'description' in data:
+        item.description = data['description']
+    if 'price' in data:
+        item.price = data['price']
+    if 'category' in data:
+        item.category = data['category']
+    if 'available' in data:
+        item.available = data['available']
+    db.session.commit()
+    return jsonify({'message': 'Menu item updated successfully', 'id': item.id})
+
 @app.route('/api/menu/<int:item_id>', methods=['DELETE'])
 def delete_menu_item(item_id):
     item = MenuItem.query.get_or_404(item_id)
+    # Check if menu item is referenced by any order items
+    referenced = OrderItem.query.filter_by(menu_item_id=item_id).first()
+    if referenced:
+        # Soft delete: mark as unavailable instead of deleting
+        item.available = False
+        db.session.commit()
+        return jsonify({'message': 'Menu item marked as unavailable (referenced by existing orders)'}), 200
     db.session.delete(item)
     db.session.commit()
     return jsonify({'message': 'Menu item deleted successfully'}), 200
@@ -499,9 +536,13 @@ def generate_pdf():
 # Initialize database with sample data
 def init_db():
     with app.app_context():
-        # Drop all tables and recreate them with new schema
-        db.drop_all()
+        # Only create tables if they don't exist (never drop existing data)
         db.create_all()
+
+        # Only seed menu items if the table is empty
+        if MenuItem.query.first() is not None:
+            print("Database already initialized, skipping seed data.")
+            return
         
         # Add menu items with categories
         menu_items = [
