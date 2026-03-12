@@ -1,9 +1,7 @@
 // API Configuration
 // In production, use relative URLs (same domain as frontend)
 // In development, use localhost
-export const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? '/api'  // Production: relative URL (same domain)
-  : 'http://localhost:5001/api';  // Development: localhost
+export const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
 
 // Printer Configuration
 // Change these values to match your printer settings

@@ -27,7 +27,7 @@ function MainPage() {
   const [editForm, setEditForm] = useState({ name: '', description: '', price: '', category: '' });
 
   const navigate = useNavigate();
-  const API_BASE = process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:5001/api';
+  const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
 
   useEffect(() => {
     fetchData();
