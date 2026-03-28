@@ -4,6 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timezone, timedelta
 import os
 from printer import print_bill
+from decimal import Decimal, ROUND_HALF_UP
 from reportlab.lib.pagesizes import letter, A4
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table as ReportLabTable, TableStyle, BaseDocTemplate
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -20,12 +21,25 @@ def get_ist_time():
     ist_time = utc_now + ist_offset
     return ist_time
 
+def round_half_up(value, digits=0):
+    quantizer = Decimal('1') if digits == 0 else Decimal(f"1.{'0' * digits}")
+    return float(Decimal(str(value)).quantize(quantizer, rounding=ROUND_HALF_UP))
+
+def get_database_uri():
+    database_url = os.environ.get('DATABASE_URL')
+    if database_url:
+        # SQLAlchemy expects postgresql://, while some platforms expose postgres://.
+        if database_url.startswith('postgres://'):
+            database_url = database_url.replace('postgres://', 'postgresql://', 1)
+        return database_url
+    return 'sqlite:///restaurant.db'
+
 # Get the directory of the current file
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 STATIC_FOLDER = os.path.join(BASE_DIR, '..', 'frontend', 'build')
 
 app = Flask(__name__, static_folder=STATIC_FOLDER, static_url_path='')
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///restaurant.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = get_database_uri()
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-here-change-in-production')
 
@@ -87,6 +101,24 @@ class Bill(db.Model):
     payment_method = db.Column(db.String(20), default='cash')
     bill_date = db.Column(db.DateTime, default=get_ist_time)
     created_at = db.Column(db.DateTime, default=get_ist_time)
+
+def serialize_order(order):
+    table = db.session.get(Table, order.table_id)
+    return {
+        'id': order.id,
+        'table_id': order.table_id,
+        'table_number': table.number if table else order.table_id,
+        'total_amount': order.total_amount,
+        'status': order.status,
+        'created_at': order.created_at.isoformat(),
+        'items': [{
+            'id': item.id,
+            'menu_item_id': item.menu_item_id,
+            'menu_item_name': item.menu_item.name,
+            'quantity': item.quantity,
+            'price': item.price
+        } for item in order.items]
+    }
 
 # Serve React App
 @app.route('/', defaults={'path': ''})
@@ -210,20 +242,7 @@ def add_table():
 @app.route('/api/orders', methods=['GET'])
 def get_orders():
     orders = Order.query.all()
-    return jsonify([{
-        'id': order.id,
-        'table_id': order.table_id,
-        'total_amount': order.total_amount,
-        'status': order.status,
-        'created_at': order.created_at.isoformat(),
-        'items': [{
-            'id': item.id,
-            'menu_item_id': item.menu_item_id,
-            'menu_item_name': item.menu_item.name,
-            'quantity': item.quantity,
-            'price': item.price
-        } for item in order.items]
-    } for order in orders])
+    return jsonify([serialize_order(order) for order in orders])
 
 @app.route('/api/orders', methods=['POST'])
 def create_order():
@@ -268,20 +287,7 @@ def create_order():
 @app.route('/api/orders/<int:order_id>', methods=['GET'])
 def get_order(order_id):
     order = Order.query.get_or_404(order_id)
-    return jsonify({
-        'id': order.id,
-        'table_id': order.table_id,
-        'total_amount': order.total_amount,
-        'status': order.status,
-        'created_at': order.created_at.isoformat(),
-        'items': [{
-            'id': item.id,
-            'menu_item_id': item.menu_item_id,
-            'menu_item_name': item.menu_item.name,
-            'quantity': item.quantity,
-            'price': item.price
-        } for item in order.items]
-    })
+    return jsonify(serialize_order(order))
 
 @app.route('/api/orders/<int:order_id>', methods=['PUT'])
 def update_order(order_id):
@@ -324,7 +330,7 @@ def update_order_status(order_id):
     if 'tax_amount' in data:
         order.tax_amount = data['tax_amount']
     if 'final_total' in data:
-        order.final_total = data['final_total']
+        order.final_total = round_half_up(data['final_total'])
     if 'payment_method' in data:
         order.payment_method = data['payment_method']
     
@@ -348,6 +354,10 @@ def create_bill():
         if existing_bill:
             return jsonify({'message': 'Bill already exists for this order', 'bill_id': existing_bill.id})
         
+        total = data.get('total')
+        if total is None:
+            total = data.get('subtotal', 0.0) + data.get('tax_amount', 0.0)
+
         # Create bill record with IST time
         new_bill = Bill(
             order_id=data.get('order_id'),
@@ -363,7 +373,7 @@ def create_bill():
             subtotal=data.get('subtotal', 0.0),
             tax_rate=data.get('tax_rate', 0.0),
             tax_amount=data.get('tax_amount', 0.0),
-            total=data.get('total', 0.0),
+            total=round_half_up(total),
             payment_method=data.get('payment_method', 'cash')
         )
         

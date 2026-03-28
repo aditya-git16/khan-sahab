@@ -65,20 +65,13 @@ set -e\n\
 echo "Starting Khan Sahab Restaurant Application..."\n\
 cd /app/backend\n\
 \n\
-# Initialize database if it does not exist\n\
+# Initialize database schema and seed defaults when required\n\
 python -c "\n\
-from app import app, db\n\
-import os\n\
+from app import init_db\n\
 \n\
-with app.app_context():\n\
-    db_path = os.path.join(app.instance_path, '"'"'restaurant.db'"'"')\n\
-    if not os.path.exists(db_path):\n\
-        print('"'"'Initializing database...'"'"')\n\
-        from app import init_db\n\
-        init_db()\n\
-        print('"'"'Database initialized successfully!'"'"')\n\
-    else:\n\
-        print('"'"'Database already exists, skipping initialization.'"'"')\n\
+print('"'"'Initializing database...'"'"')\n\
+init_db()\n\
+print('"'"'Database initialization complete.'"'"')\n\
 "\n\
 \n\
 echo "Starting Gunicorn server..."\n\
@@ -97,4 +90,3 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 
 # Start the application
 CMD ["/bin/bash", "/app/start.sh"]
-

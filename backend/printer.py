@@ -3,6 +3,7 @@ import tempfile
 import os
 import webbrowser
 from datetime import datetime
+from decimal import Decimal, ROUND_HALF_UP
 import pytz
 
 class HTMLBillGenerator:
@@ -26,6 +27,11 @@ class HTMLBillGenerator:
             date_obj = HTMLBillGenerator.get_ist_time()
         return date_obj.strftime('%I:%M %p').lower()
 
+    @staticmethod
+    def round_half_up(amount):
+        """Round to the nearest whole number with .5 rounding up."""
+        return int(Decimal(str(amount)).quantize(Decimal('1'), rounding=ROUND_HALF_UP))
+
 class RestaurantBillGenerator(HTMLBillGenerator):
     @staticmethod
     def generate_html_bill(bill_data):
@@ -36,16 +42,18 @@ class RestaurantBillGenerator(HTMLBillGenerator):
         current_time_str = HTMLBillGenerator.format_ist_time(current_time)
         
         # Calculate totals
-        subtotal = 0
+        computed_subtotal = 0
         for item in bill_data.get('items', []):
             qty = item.get('qty', 1)
             price = item.get('price', 0)
             amount = qty * price
-            subtotal += amount
+            computed_subtotal += amount
         
         tax_rate = bill_data.get('tax_rate', 0.05)  # Default 5% GST
-        tax_amount = subtotal * tax_rate
-        total = subtotal + tax_amount
+        subtotal = bill_data.get('subtotal', computed_subtotal)
+        tax_amount = bill_data.get('tax_amount', subtotal * tax_rate)
+        total = HTMLBillGenerator.round_half_up(bill_data.get('total', subtotal + tax_amount))
+        table_number = bill_data.get('table_number', bill_data.get('table_id', 'N/A'))
         
         # Generate items HTML
         items_html = ""
@@ -211,13 +219,6 @@ class RestaurantBillGenerator(HTMLBillGenerator):
                     font-weight: 600;
                 }}
                 
-                .tax-breakdown {{
-                    margin: 4px 0;
-                    font-size: 11px;
-                    font-weight: 600;
-                    text-align: center;
-                }}
-                
                 /* Print-specific styles for 231 DPI */
                 @media print {{
                     body {{
@@ -303,7 +304,7 @@ class RestaurantBillGenerator(HTMLBillGenerator):
                     <span>Time: {bill_data.get('time', current_time_str)}</span>
                 </div>
                 <div class="detail-row">
-                    <span>Place of Supply: {bill_data.get('place_of_supply', 'Uttar Pradesh')}</span>
+                    <span>Table No: {table_number}</span>
                     <span></span>
                 </div>
             </div>
@@ -327,14 +328,12 @@ class RestaurantBillGenerator(HTMLBillGenerator):
                     <span>SUBTOTAL</span>
                     <span>₹{subtotal:.2f}</span>
                 </div>
-                {"<div class='total-row'><span>GST @" + str(int(tax_rate*100)) + "%</span><span>₹" + f"{tax_amount:.2f}" + "</span></div>" if tax_rate > 0 else ""}
+                {"<div class='total-row'><span>Tax @" + str(int(tax_rate*100)) + "%</span><span>₹" + f"{tax_amount:.2f}" + "</span></div>" if tax_rate > 0 else ""}
                 <div class="total-row final">
                     <span>TOTAL</span>
-                    <span>₹{total:.2f}</span>
+                    <span>₹{total}</span>
                 </div>
             </div>
-            
-            {"<div class='tax-breakdown'>GST@" + str(int(tax_rate*100)) + "% - Taxable: ₹" + f"{subtotal:.2f}" + " | Tax: ₹" + f"{tax_amount:.2f}" + "</div>" if tax_rate > 0 else ""}
             
             <div class="footer">
                 <p>THANK YOU FOR YOUR VISIT!</p>

@@ -30,12 +30,18 @@ function PaymentPage() {
     fetchOrder();
   }, [fetchOrder]);
 
+  const roundBillTotal = (amount) => Math.round(Number((amount + Number.EPSILON).toFixed(2)));
+
+  const formatAmount = (amount) => amount.toFixed(2);
+
+  const formatRoundedAmount = (amount) => roundBillTotal(amount).toString();
+
   const calculateTotals = () => {
     if (!order) return { subtotal: 0, tax: 0, total: 0 };
 
     const subtotal = order.total_amount;
     const tax = subtotal * (taxRate / 100);
-    const total = subtotal + tax;
+    const total = roundBillTotal(subtotal + tax);
 
     return { subtotal, tax, total };
   };
@@ -43,6 +49,8 @@ function PaymentPage() {
   const generateBillHTML = (billData, subtotal, taxAmount, total) => {
     const taxRateDecimal = billData.tax_rate;
     const taxPercent = Math.round(taxRateDecimal * 100);
+    const roundedTotal = roundBillTotal(total);
+    const tableNumber = billData.table_number ?? billData.table_id ?? 'N/A';
 
     let itemsHTML = '';
     for (const item of billData.items) {
@@ -51,16 +59,13 @@ function PaymentPage() {
         <tr>
           <td style="padding: 3px 1px 3px 2px; border-bottom: 1px solid #ddd; font-weight: 600; font-size: 10px;">${item.name}</td>
           <td style="padding: 3px 1px 3px 2px; border-bottom: 1px solid #ddd; text-align: center; font-weight: 600; font-size: 10px;">${item.qty}</td>
-          <td style="padding: 3px 1px 3px 2px; border-bottom: 1px solid #ddd; text-align: right; font-weight: 600; font-size: 10px;">\u20B9${item.price.toFixed(2)}</td>
-          <td style="padding: 3px 1px 3px 2px; border-bottom: 1px solid #ddd; text-align: right; font-weight: 600; font-size: 10px;">\u20B9${amount.toFixed(2)}</td>
+          <td style="padding: 3px 1px 3px 2px; border-bottom: 1px solid #ddd; text-align: right; font-weight: 600; font-size: 10px;">\u20B9${formatAmount(item.price)}</td>
+          <td style="padding: 3px 1px 3px 2px; border-bottom: 1px solid #ddd; text-align: right; font-weight: 600; font-size: 10px;">\u20B9${formatAmount(amount)}</td>
         </tr>`;
     }
 
     const gstLine = taxRateDecimal > 0
-      ? `<div class="total-row"><span>GST @${taxPercent}%</span><span>\u20B9${taxAmount.toFixed(2)}</span></div>`
-      : '';
-    const taxBreakdown = taxRateDecimal > 0
-      ? `<div class="tax-breakdown">GST@${taxPercent}% - Taxable: \u20B9${subtotal.toFixed(2)} | Tax: \u20B9${taxAmount.toFixed(2)}</div>`
+      ? `<div class="total-row"><span>Tax @${taxPercent}%</span><span>\u20B9${formatAmount(taxAmount)}</span></div>`
       : '';
 
     return `<!DOCTYPE html>
@@ -102,7 +107,6 @@ function PaymentPage() {
       padding: 5px 0; margin-top: 4px;
     }
     .footer { text-align: center; margin-top: 8px; border-top: 2px solid #000; padding-top: 4px; font-size: 11px; font-weight: 600; }
-    .tax-breakdown { margin: 4px 0; font-size: 11px; font-weight: 600; text-align: center; }
     .no-print { text-align: center; margin-top: 15px; background: #f5f5f5; padding: 10px; border-radius: 5px; }
     @media print {
       body { width: 72mm; margin: 0; padding: 2mm 5mm 2mm 3mm; }
@@ -141,7 +145,7 @@ function PaymentPage() {
       <span>Time: ${billData.time}</span>
     </div>
     <div class="detail-row">
-      <span>Place of Supply: ${billData.place_of_supply}</span>
+      <span>Table No: ${tableNumber}</span>
       <span></span>
     </div>
   </div>
@@ -161,16 +165,14 @@ function PaymentPage() {
   <div class="totals">
     <div class="total-row">
       <span>SUBTOTAL</span>
-      <span>\u20B9${subtotal.toFixed(2)}</span>
+      <span>\u20B9${formatAmount(subtotal)}</span>
     </div>
     ${gstLine}
     <div class="total-row final">
       <span>TOTAL</span>
-      <span>\u20B9${total.toFixed(2)}</span>
+      <span>\u20B9${roundedTotal}</span>
     </div>
   </div>
-
-  ${taxBreakdown}
 
   <div class="footer">
     <p>THANK YOU FOR YOUR VISIT!</p>
@@ -222,6 +224,8 @@ function PaymentPage() {
         fssai: '12722001001504',
         place_of_supply: 'Uttar Pradesh',
         invoice_number: orderId.toString(),
+        table_id: order.table_id,
+        table_number: order.table_number ?? order.table_id,
         date: currentDate.toLocaleDateString('en-IN'),
         time: currentDate.toLocaleTimeString('en-IN', {
           hour: '2-digit',
@@ -287,6 +291,8 @@ function PaymentPage() {
       fssai: '12722001001504',
       place_of_supply: 'Uttar Pradesh',
       invoice_number: orderId.toString(),
+      table_id: order.table_id,
+      table_number: order.table_number ?? order.table_id,
       date: currentDate.toLocaleDateString('en-IN'),
       time: currentDate.toLocaleTimeString('en-IN', {
         hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
@@ -348,8 +354,7 @@ function PaymentPage() {
             <div className="bill-info-grid">
               <div className="bill-info-left">
                 <p>Cash Sale</p>
-                <p>Place of Supply:</p>
-                <p>Uttar Pradesh</p>
+                <p>Table No: {order.table_number ?? order.table_id}</p>
               </div>
               <div className="bill-info-right">
                 <p>Date: {new Date().toLocaleDateString('en-IN')}</p>
@@ -391,38 +396,19 @@ function PaymentPage() {
           <div className="bill-totals">
             <div className="bill-total-line">
               <span>Subtotal</span>
-              <span>₹{subtotal.toFixed(2)}</span>
+              <span>₹{formatAmount(subtotal)}</span>
             </div>
             {taxRate > 0 && (
               <div className="bill-total-line">
-                <span>Taxes</span>
-                <span>₹{tax.toFixed(2)}</span>
+                <span>Tax @{taxRate}%</span>
+                <span>₹{formatAmount(tax)}</span>
               </div>
             )}
             <div className="bill-total-line grand-total">
               <span>Total</span>
-              <span>₹{total.toFixed(2)}</span>
+              <span>₹{formatRoundedAmount(total)}</span>
             </div>
           </div>
-
-          {taxRate > 0 && (
-            <>
-              <div className="bill-divider">------------------------------------------------</div>
-              <div className="bill-tax-breakdown">
-                <div className="bill-tax-header">
-                  <span>Tax Type</span>
-                  <span>Taxable Amt</span>
-                  <span>Tax Amt</span>
-                </div>
-                <div className="bill-divider">------------------------------------------------</div>
-                <div className="bill-tax-line">
-                  <span>GST@{taxRate}%</span>
-                  <span>₹{subtotal.toFixed(2)}</span>
-                  <span>₹{tax.toFixed(2)}</span>
-                </div>
-              </div>
-            </>
-          )}
 
           <div className="bill-divider">------------------------------------------------</div>
 
@@ -484,15 +470,15 @@ function PaymentPage() {
             <div className="payment-totals">
               <div className="total-line">
                 <span>Subtotal:</span>
-                <span>₹{subtotal.toFixed(2)}</span>
+                <span>₹{formatAmount(subtotal)}</span>
               </div>
               <div className="total-line">
                 <span>Tax ({taxRate}%):</span>
-                <span>₹{tax.toFixed(2)}</span>
+                <span>₹{formatAmount(tax)}</span>
               </div>
               <div className="total-line grand-total">
                 <span>Total:</span>
-                <span>₹{total.toFixed(2)}</span>
+                <span>₹{formatRoundedAmount(total)}</span>
               </div>
             </div>
           </div>

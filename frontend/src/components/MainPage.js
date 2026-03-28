@@ -28,6 +28,12 @@ function MainPage() {
 
   const navigate = useNavigate();
   const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
+  const allCategories = Array.from(
+    new Set([
+      ...menuCategories,
+      ...menu.map(item => item.category).filter(Boolean)
+    ])
+  ).sort((a, b) => a.localeCompare(b));
 
   useEffect(() => {
     fetchData();
@@ -73,7 +79,12 @@ function MainPage() {
 
   const addMenuItem = async () => {
     try {
-      await axios.post(`${API_BASE}/menu`, newMenuItem);
+      await axios.post(`${API_BASE}/menu`, {
+        ...newMenuItem,
+        name: newMenuItem.name.trim(),
+        description: newMenuItem.description.trim(),
+        category: newMenuItem.category.trim() || 'General'
+      });
       setNewMenuItem({ name: '', description: '', price: '', category: '' });
       setShowAddMenuItem(false);
       fetchData();
@@ -112,7 +123,12 @@ function MainPage() {
 
   const updateMenuItem = async () => {
     try {
-      await axios.put(`${API_BASE}/menu/${editingItem.id}`, editForm);
+      await axios.put(`${API_BASE}/menu/${editingItem.id}`, {
+        ...editForm,
+        name: editForm.name.trim(),
+        description: editForm.description.trim(),
+        category: editForm.category.trim() || 'General'
+      });
       setEditingItem(null);
       setEditForm({ name: '', description: '', price: '', category: '' });
       fetchData();
@@ -531,30 +547,27 @@ function MainPage() {
                     type="number"
                     step="0.01"
                     value={newMenuItem.price}
-                    onChange={(e) => setNewMenuItem({...newMenuItem, price: parseFloat(e.target.value)})}
+                    onChange={(e) => setNewMenuItem({
+                      ...newMenuItem,
+                      price: e.target.value === '' ? '' : parseFloat(e.target.value)
+                    })}
                     placeholder="Enter price"
                   />
                 </div>
                 <div className="form-group">
                   <label>Category:</label>
-                  <select
+                  <input
+                    type="text"
+                    list="menu-category-options"
                     value={newMenuItem.category}
                     onChange={(e) => setNewMenuItem({...newMenuItem, category: e.target.value})}
-                  >
-                    <option value="">Select Category</option>
-                    <option value="Beverages">Beverages</option>
-                    <option value="Veg Starters">Veg Starters</option>
-                    <option value="Non-Veg Starters">Non-Veg Starters</option>
-                    <option value="Khan Sahab Spl. Mutton">Khan Sahab Spl. Mutton</option>
-                    <option value="Khan Sahab Spl. Chicken">Khan Sahab Spl. Chicken</option>
-                    <option value="Khan Sahab Spl. Chinese">Khan Sahab Spl. Chinese</option>
-                    <option value="Soups">Soups</option>
-                    <option value="Khan Sahab Veg Special">Khan Sahab Veg Special</option>
-                    <option value="Rice & Biryani">Rice & Biryani</option>
-                    <option value="Indian Breads">Indian Breads</option>
-                    <option value="Dessert">Dessert</option>
-                    <option value="Salad / Papad">Salad / Papad</option>
-                  </select>
+                    placeholder="Select or type a new category"
+                  />
+                  <datalist id="menu-category-options">
+                    {allCategories.map(category => (
+                      <option key={category} value={category} />
+                    ))}
+                  </datalist>
                 </div>
                 <div className="modal-buttons">
                   <button className="button" onClick={() => setShowAddMenuItem(false)}>
@@ -594,29 +607,26 @@ function MainPage() {
                     type="number"
                     step="0.01"
                     value={editForm.price}
-                    onChange={(e) => setEditForm({...editForm, price: parseFloat(e.target.value)})}
+                    onChange={(e) => setEditForm({
+                      ...editForm,
+                      price: e.target.value === '' ? '' : parseFloat(e.target.value)
+                    })}
                   />
                 </div>
                 <div className="form-group">
                   <label>Category:</label>
-                  <select
+                  <input
+                    type="text"
+                    list="edit-category-options"
                     value={editForm.category}
                     onChange={(e) => setEditForm({...editForm, category: e.target.value})}
-                  >
-                    <option value="">Select Category</option>
-                    <option value="Beverages">Beverages</option>
-                    <option value="Veg Starters">Veg Starters</option>
-                    <option value="Non-Veg Starters">Non-Veg Starters</option>
-                    <option value="Khan Sahab Spl. Mutton">Khan Sahab Spl. Mutton</option>
-                    <option value="Khan Sahab Spl. Chicken">Khan Sahab Spl. Chicken</option>
-                    <option value="Khan Sahab Spl. Chinese">Khan Sahab Spl. Chinese</option>
-                    <option value="Soups">Soups</option>
-                    <option value="Khan Sahab Veg Special">Khan Sahab Veg Special</option>
-                    <option value="Rice & Biryani">Rice & Biryani</option>
-                    <option value="Indian Breads">Indian Breads</option>
-                    <option value="Dessert">Dessert</option>
-                    <option value="Salad / Papad">Salad / Papad</option>
-                  </select>
+                    placeholder="Select or type a new category"
+                  />
+                  <datalist id="edit-category-options">
+                    {allCategories.map(category => (
+                      <option key={category} value={category} />
+                    ))}
+                  </datalist>
                 </div>
                 <div className="modal-buttons">
                   <button className="button" onClick={() => setEditingItem(null)}>
@@ -789,18 +799,11 @@ function MainPage() {
                 className="category-select"
               >
                 <option value="all">All Categories</option>
-                <option value="Beverages">Beverages</option>
-                <option value="Veg Starters">Veg Starters</option>
-                <option value="Non-Veg Starters">Non-Veg Starters</option>
-                <option value="Khan Sahab Spl. Mutton">Khan Sahab Spl. Mutton</option>
-                <option value="Khan Sahab Spl. Chicken">Khan Sahab Spl. Chicken</option>
-                <option value="Khan Sahab Spl. Chinese">Khan Sahab Spl. Chinese</option>
-                <option value="Soups">Soups</option>
-                <option value="Khan Sahab Veg Special">Khan Sahab Veg Special</option>
-                <option value="Rice & Biryani">Rice & Biryani</option>
-                <option value="Indian Breads">Indian Breads</option>
-                <option value="Dessert">Dessert</option>
-                <option value="Salad / Papad">Salad / Papad</option>
+                {allCategories.map(category => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
               </select>
             </div>
           </div>

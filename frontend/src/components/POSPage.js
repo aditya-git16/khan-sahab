@@ -15,6 +15,9 @@ function POSPage() {
   const [searchTerm, setSearchTerm] = useState('');
 
   const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
+  const availableCategories = Array.from(
+    new Set(menu.map(item => item.category).filter(Boolean))
+  ).sort((a, b) => a.localeCompare(b));
 
   const fetchData = useCallback(async () => {
     try {
@@ -175,84 +178,85 @@ function POSPage() {
         {/* Left Side - Cart */}
         <div className="pos-cart">
           <h2>Current Order</h2>
-          
-          {cart.length === 0 ? (
-            <div className="empty-cart">
-              <p>No items in cart</p>
-              <p>Select items from the menu to start</p>
-            </div>
-          ) : (
-            <>
-              <div className="cart-items">
-                {cart.map(item => (
-                  <div key={item.id} className="cart-item">
-                    <div className="cart-item-info">
-                      <h4>{item.name}</h4>
-                      <p>₹{item.price.toFixed(2)} each</p>
+          <div className="pos-cart-body">
+            {cart.length === 0 ? (
+              <div className="empty-cart">
+                <p>No items in cart</p>
+                <p>Select items from the menu to start</p>
+              </div>
+            ) : (
+              <>
+                <div className="cart-items">
+                  {cart.map(item => (
+                    <div key={item.id} className="cart-item">
+                      <div className="cart-item-info">
+                        <h4>{item.name}</h4>
+                        <p>₹{item.price.toFixed(2)} each</p>
+                      </div>
+                      <div className="quantity-controls">
+                        <button 
+                          className="quantity-btn"
+                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                        >
+                          -
+                        </button>
+                        <span className="quantity">{item.quantity}</span>
+                        <button 
+                          className="quantity-btn"
+                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                        >
+                          +
+                        </button>
+                      </div>
+                      <div className="cart-item-total">
+                        ₹{(item.price * item.quantity).toFixed(2)}
+                      </div>
                     </div>
-                    <div className="quantity-controls">
-                      <button 
-                        className="quantity-btn"
-                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                      >
-                        -
-                      </button>
-                      <span className="quantity">{item.quantity}</span>
-                      <button 
-                        className="quantity-btn"
-                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                      >
-                        +
-                      </button>
-                    </div>
-                    <div className="cart-item-total">
-                      ₹{(item.price * item.quantity).toFixed(2)}
-                    </div>
+                  ))}
+                </div>
+
+                <div className="cart-total">
+                  <div className="total-line">
+                    <span>Subtotal:</span>
+                    <span>₹{total.toFixed(2)}</span>
                   </div>
-                ))}
-              </div>
-
-              <div className="cart-total">
-                <div className="total-line">
-                  <span>Subtotal:</span>
-                  <span>₹{total.toFixed(2)}</span>
+                  <div className="total-line grand-total">
+                    <span>Total:</span>
+                    <span>₹{total.toFixed(2)}</span>
+                  </div>
                 </div>
-                <div className="total-line grand-total">
-                  <span>Total:</span>
-                  <span>₹{total.toFixed(2)}</span>
-                </div>
-              </div>
 
-              <div className="cart-actions">
-                {isUpdating ? (
-                  <>
+                <div className="cart-actions">
+                  {isUpdating ? (
+                    <>
+                      <button 
+                        className="button success" 
+                        onClick={placeOrder}
+                        style={{ width: '100%', marginBottom: '10px' }}
+                      >
+                        Update Order
+                      </button>
+                      <button 
+                        className="button" 
+                        onClick={goToPayment}
+                        style={{ width: '100%' }}
+                      >
+                        Complete Order & Payment
+                      </button>
+                    </>
+                  ) : (
                     <button 
                       className="button success" 
                       onClick={placeOrder}
-                      style={{ width: '100%', marginBottom: '10px' }}
-                    >
-                      Update Order
-                    </button>
-                    <button 
-                      className="button" 
-                      onClick={goToPayment}
                       style={{ width: '100%' }}
                     >
-                      Complete Order & Payment
+                      Place Order
                     </button>
-                  </>
-                ) : (
-                  <button 
-                    className="button success" 
-                    onClick={placeOrder}
-                    style={{ width: '100%' }}
-                  >
-                    Place Order
-                  </button>
-                )}
-              </div>
-            </>
-          )}
+                  )}
+                </div>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Right Side - Menu */}
@@ -277,18 +281,11 @@ function POSPage() {
                 className="category-select"
               >
                 <option value="all">All Categories</option>
-                <option value="Beverages">Beverages</option>
-                <option value="Veg Starters">Veg Starters</option>
-                <option value="Non-Veg Starters">Non-Veg Starters</option>
-                <option value="Khan Sahab Spl. Mutton">Khan Sahab Spl. Mutton</option>
-                <option value="Khan Sahab Spl. Chicken">Khan Sahab Spl. Chicken</option>
-                <option value="Khan Sahab Spl. Chinese">Khan Sahab Spl. Chinese</option>
-                <option value="Soups">Soups</option>
-                <option value="Khan Sahab Veg Special">Khan Sahab Veg Special</option>
-                <option value="Rice & Biryani">Rice & Biryani</option>
-                <option value="Indian Breads">Indian Breads</option>
-                <option value="Dessert">Dessert</option>
-                <option value="Salad / Papad">Salad / Papad</option>
+                {availableCategories.map(category => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
