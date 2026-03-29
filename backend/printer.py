@@ -49,7 +49,7 @@ class RestaurantBillGenerator(HTMLBillGenerator):
             amount = qty * price
             computed_subtotal += amount
         
-        tax_rate = bill_data.get('tax_rate', 0.05)  # Default 5% GST
+        tax_rate = bill_data.get('tax_rate', 0.05)  # Default 5% Tax
         subtotal = bill_data.get('subtotal', computed_subtotal)
         tax_amount = bill_data.get('tax_amount', subtotal * tax_rate)
         total = HTMLBillGenerator.round_half_up(bill_data.get('total', subtotal + tax_amount))
@@ -287,7 +287,6 @@ class RestaurantBillGenerator(HTMLBillGenerator):
                 <div class="halal">UNIT OF TUAHA FOOD</div>
                 <div class="restaurant-name">{bill_data.get('restaurant_name', 'KHAN SAHAB RESTAURANT')}</div>
                 <div class="address">{bill_data.get('address', '4, BANSAL NAGAR FATEHABAD ROAD AGRA')}</div>
-                <div class="address">State: {bill_data.get('state', 'Uttar Pradesh')} ({bill_data.get('state_code', '09')})</div>
                 <div class="address">Ph: {bill_data.get('phone', '9319209322')}</div>
                 <div class="address">GSTIN: {bill_data.get('gstin', '09AHDPA1039P2ZB')}</div>
                 <div class="address">FSSAI: {bill_data.get('fssai', '12722001001504')}</div>
@@ -423,7 +422,7 @@ if __name__ == '__main__':
             {'name': 'Chicken Makhani Boneless', 'qty': 1, 'price': 699.00},
             {'name': 'Butter Naan', 'qty': 2, 'price': 70.00}
         ],
-        'tax_rate': 0.05,  # 5% GST
+        'tax_rate': 0.05,  # 5% Tax
         'receipt_url': 'https://khansahabrestaurant.com/receipt/3'
     }
     

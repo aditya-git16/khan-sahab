@@ -25,6 +25,8 @@ function MainPage() {
   const [itemToDelete, setItemToDelete] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
   const [editForm, setEditForm] = useState({ name: '', description: '', price: '', category: '' });
+  const [showAddCategory, setShowAddCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
 
   const navigate = useNavigate();
   const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
@@ -135,6 +137,20 @@ function MainPage() {
     } catch (err) {
       alert('Failed to update menu item. Please try again.');
       console.error('Error updating menu item:', err);
+    }
+  };
+
+  const addCategory = async () => {
+    const name = newCategoryName.trim();
+    if (!name) return;
+    try {
+      await axios.post(`${API_BASE}/menu/categories`, { name });
+      setNewCategoryName('');
+      setShowAddCategory(false);
+      fetchData();
+    } catch (err) {
+      const msg = err.response?.data?.error || 'Failed to add category.';
+      alert(msg);
     }
   };
 
@@ -514,10 +530,42 @@ function MainPage() {
         <div className="section">
           <div className="section-header">
             <h2>Menu Management</h2>
-            <button className="button success" onClick={() => setShowAddMenuItem(true)}>
-              + Add Menu Item
-            </button>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button className="button" onClick={() => setShowAddCategory(true)}>
+                + Add Category
+              </button>
+              <button className="button success" onClick={() => setShowAddMenuItem(true)}>
+                + Add Menu Item
+              </button>
+            </div>
           </div>
+
+          {/* Add Category Modal */}
+          {showAddCategory && (
+            <div className="modal-overlay">
+              <div className="modal">
+                <h3>Add New Category</h3>
+                <div className="form-group">
+                  <label>Category Name:</label>
+                  <input
+                    type="text"
+                    value={newCategoryName}
+                    onChange={(e) => setNewCategoryName(e.target.value)}
+                    placeholder="Enter category name"
+                    onKeyDown={(e) => e.key === 'Enter' && addCategory()}
+                  />
+                </div>
+                <div className="modal-buttons">
+                  <button className="button" onClick={() => { setShowAddCategory(false); setNewCategoryName(''); }}>
+                    Cancel
+                  </button>
+                  <button className="button success" onClick={addCategory}>
+                    Add Category
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Add Menu Item Modal */}
           {showAddMenuItem && (

@@ -47,6 +47,10 @@ db = SQLAlchemy(app)
 CORS(app)
 
 # Database Models
+class Category(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), unique=True, nullable=False)
+
 class MenuItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
@@ -170,8 +174,35 @@ def get_all_menu():
 
 @app.route('/api/menu/categories', methods=['GET'])
 def get_menu_categories():
-    categories = db.session.query(MenuItem.category).filter_by(available=True).distinct().all()
-    return jsonify([category[0] for category in categories if category[0]])
+    menu_cats = db.session.query(MenuItem.category).filter_by(available=True).distinct().all()
+    menu_cat_names = {c[0] for c in menu_cats if c[0]}
+    custom_cats = Category.query.all()
+    custom_cat_names = {c.name for c in custom_cats}
+    all_cats = sorted(menu_cat_names | custom_cat_names)
+    return jsonify(all_cats)
+
+@app.route('/api/menu/categories', methods=['POST'])
+def add_category():
+    data = request.get_json()
+    name = data.get('name', '').strip()
+    if not name:
+        return jsonify({'error': 'Category name is required'}), 400
+    existing = Category.query.filter_by(name=name).first()
+    if existing:
+        return jsonify({'error': 'Category already exists'}), 400
+    new_cat = Category(name=name)
+    db.session.add(new_cat)
+    db.session.commit()
+    return jsonify({'id': new_cat.id, 'name': new_cat.name}), 201
+
+@app.route('/api/menu/categories/<int:category_id>', methods=['DELETE'])
+def delete_category(category_id):
+    cat = db.session.get(Category, category_id)
+    if not cat:
+        return jsonify({'error': 'Category not found'}), 404
+    db.session.delete(cat)
+    db.session.commit()
+    return jsonify({'message': 'Category deleted'})
 
 @app.route('/api/menu', methods=['POST'])
 def add_menu_item():

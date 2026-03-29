@@ -64,7 +64,7 @@ function PaymentPage() {
         </tr>`;
     }
 
-    const gstLine = taxRateDecimal > 0
+    const taxLine = taxRateDecimal > 0
       ? `<div class="total-row"><span>Tax @${taxPercent}%</span><span>\u20B9${formatAmount(taxAmount)}</span></div>`
       : '';
 
@@ -128,7 +128,6 @@ function PaymentPage() {
     <div class="halal">UNIT OF TUAHA FOOD</div>
     <div class="restaurant-name">${billData.restaurant_name}</div>
     <div class="address">${billData.address}</div>
-    <div class="address">State: ${billData.state} (${billData.state_code})</div>
     <div class="address">Ph: ${billData.phone}</div>
     <div class="address">GSTIN: ${billData.gstin}</div>
     <div class="address">FSSAI: ${billData.fssai}</div>
@@ -167,7 +166,7 @@ function PaymentPage() {
       <span>SUBTOTAL</span>
       <span>\u20B9${formatAmount(subtotal)}</span>
     </div>
-    ${gstLine}
+    ${taxLine}
     <div class="total-row final">
       <span>TOTAL</span>
       <span>\u20B9${roundedTotal}</span>
@@ -217,12 +216,9 @@ function PaymentPage() {
       const billData = {
         restaurant_name: 'KHAN SAHAB RESTAURANT',
         address: '4, BANSAL NAGAR FATEHABAD ROAD AGRA',
-        state: 'Uttar Pradesh',
-        state_code: '09',
         phone: '9319209322',
         gstin: '09AHDPA1039P2ZB',
         fssai: '12722001001504',
-        place_of_supply: 'Uttar Pradesh',
         invoice_number: orderId.toString(),
         table_id: order.table_id,
         table_number: order.table_number ?? order.table_id,
@@ -248,12 +244,9 @@ function PaymentPage() {
         invoice_number: orderId.toString(),
         restaurant_name: billData.restaurant_name,
         address: billData.address,
-        state: billData.state,
-        state_code: billData.state_code,
         phone: billData.phone,
         gstin: billData.gstin,
         fssai: billData.fssai,
-        place_of_supply: billData.place_of_supply,
         subtotal: subtotal,
         tax_rate: taxRate / 100,
         tax_amount: tax,
@@ -284,8 +277,6 @@ function PaymentPage() {
     const billData = {
       restaurant_name: 'KHAN SAHAB RESTAURANT',
       address: '4, BANSAL NAGAR FATEHABAD ROAD AGRA',
-      state: 'Uttar Pradesh',
-      state_code: '09',
       phone: '9319209322',
       gstin: '09AHDPA1039P2ZB',
       fssai: '12722001001504',
@@ -340,7 +331,6 @@ function PaymentPage() {
             </div>
             <h1>KHAN SAHAB RESTAURANT</h1>
             <p>4, BANSAL NAGAR FATEHABAD ROAD AGRA</p>
-            <p>State: Uttar Pradesh (09)</p>
             <p>Phone: 9319209322</p>
             <p>GSTIN: 09AHDPA1039P2ZB</p>
             <p>FSSAI: 12722001001504</p>
