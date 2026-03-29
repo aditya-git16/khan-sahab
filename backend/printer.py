@@ -29,8 +29,9 @@ class HTMLBillGenerator:
 
     @staticmethod
     def round_half_up(amount):
-        """Round to the nearest whole number with .5 rounding up."""
-        return int(Decimal(str(amount)).quantize(Decimal('1'), rounding=ROUND_HALF_UP))
+        """Round to the nearest 10 with .5 rounding up."""
+        whole = int(Decimal(str(amount)).quantize(Decimal('1'), rounding=ROUND_HALF_UP))
+        return int(Decimal(str(whole / 10)).quantize(Decimal('1'), rounding=ROUND_HALF_UP)) * 10
 
 class RestaurantBillGenerator(HTMLBillGenerator):
     @staticmethod

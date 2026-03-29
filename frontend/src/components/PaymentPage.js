@@ -30,7 +30,7 @@ function PaymentPage() {
     fetchOrder();
   }, [fetchOrder]);
 
-  const roundBillTotal = (amount) => Math.round(Number((amount + Number.EPSILON).toFixed(2)));
+  const roundBillTotal = (amount) => Math.round(Math.round(Number((amount + Number.EPSILON).toFixed(2))) / 10) * 10;
 
   const formatAmount = (amount) => amount.toFixed(2);
 

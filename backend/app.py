@@ -23,7 +23,8 @@ def get_ist_time():
 
 def round_half_up(value, digits=0):
     quantizer = Decimal('1') if digits == 0 else Decimal(f"1.{'0' * digits}")
-    return float(Decimal(str(value)).quantize(quantizer, rounding=ROUND_HALF_UP))
+    rounded = float(Decimal(str(value)).quantize(quantizer, rounding=ROUND_HALF_UP))
+    return float(int(Decimal(str(rounded / 10)).quantize(Decimal('1'), rounding=ROUND_HALF_UP)) * 10)
 
 def get_database_uri():
     database_url = os.environ.get('DATABASE_URL')
